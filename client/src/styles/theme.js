@@ -2,7 +2,7 @@
 export const colors = {
   primary: {
     light: '#FFB74D', // Light orange
-    main: '#FF9800',  // Main orange
+    main: '#FF9100',  // Main orange
     dark: '#F57C00',  // Dark orange
     contrast: '#FFFFFF' // White text for orange backgrounds
   },
