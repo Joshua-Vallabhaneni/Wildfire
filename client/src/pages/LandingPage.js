@@ -1,4 +1,3 @@
-// client/src/pages/LandingPage.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,20 +11,11 @@ function LandingPage() {
     address: ""
   });
 
-  // We'll store userId after creation
-  const [userId, setUserId] = useState(null);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // For openrouteservice autocomplete, you'd typically query an endpoint on input change.
-  // We'll skip the actual fetch for brevity, but here's how you'd do it:
-  // fetch(`https://api.openrouteservice.org/geocode/autocomplete?api_key=XXXX&text=${formData.address}`)
-  //   .then(res => ...)
-
   const handleSubmit = async (isVolunteer) => {
-    // Create user in backend
     try {
       const response = await fetch("http://localhost:8080/api/users", {
         method: "POST",
@@ -37,8 +27,7 @@ function LandingPage() {
         })
       });
       const data = await response.json();
-      setUserId(data._id);
-
+      
       if (isVolunteer) {
         navigate(`/volunteer/${data._id}`);
       } else {
@@ -49,50 +38,145 @@ function LandingPage() {
     }
   };
 
-  return (
-    <div style={{ padding: "20px" }}>
-      <h1>Post-Wildfire Aid Web App</h1>
-      <h2>Sign In / Sign Up</h2>
-      <div>
-        <label>Name:</label>
-        <input
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-        /><br/>
-        <label>Phone:</label>
-        <input
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-        /><br/>
-        <label>Email:</label>
-        <input
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-        /><br/>
-        <label>Age:</label>
-        <input
-          name="age"
-          value={formData.age}
-          onChange={handleChange}
-        /><br/>
-        <label>Address (autofill):</label>
-        <input
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-        /><br/>
-      </div>
+  // Inline styles for immediate effect
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '2rem',
+      backgroundColor: '#FAFAFA'
+    },
+    card: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: '12px',
+      padding: '2rem',
+      boxShadow: '0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12)',
+      width: '100%',
+      maxWidth: '480px'
+    },
+    title: {
+      color: '#FF9800',
+      fontSize: '2.5rem',
+      fontWeight: 700,
+      marginBottom: '2rem',
+      textAlign: 'center'
+    },
+    inputGroup: {
+      marginBottom: '1rem'
+    },
+    label: {
+      display: 'block',
+      marginBottom: '0.5rem',
+      color: '#212121',
+      fontSize: '0.875rem'
+    },
+    input: {
+      width: '100%',
+      padding: '0.75rem',
+      borderRadius: '8px',
+      border: '2px solid #EEEEEE',
+      fontSize: '1rem',
+      transition: 'all 0.2s ease-in-out',
+      marginBottom: '1rem'
+    },
+    buttonContainer: {
+      display: 'flex',
+      gap: '1rem',
+      marginTop: '2rem'
+    },
+    button: {
+      flex: 1,
+      padding: '1rem',
+      borderRadius: '8px',
+      border: 'none',
+      fontSize: '1rem',
+      fontWeight: 500,
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out'
+    },
+    primaryButton: {
+      backgroundColor: '#FF9800',
+      color: '#FFFFFF',
+    },
+    secondaryButton: {
+      backgroundColor: '#FFFFFF',
+      border: '2px solid #FF9800',
+      color: '#FF9800'
+    }
+  };
 
-      <div style={{ marginTop: "20px" }}>
-        <button onClick={() => handleSubmit(false)}>
-          Looking for help?
-        </button>
-        <button onClick={() => handleSubmit(true)} style={{ marginLeft: "10px" }}>
-          Looking to help?
-        </button>
+  return (
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Post-Wildfire Aid Web App</h1>
+        <h2 style={{...styles.title, fontSize: '1.5rem'}}>Sign In / Sign Up</h2>
+        
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Name:</label>
+          <input
+            style={styles.input}
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Phone:</label>
+          <input
+            style={styles.input}
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Email:</label>
+          <input
+            style={styles.input}
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Age:</label>
+          <input
+            style={styles.input}
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Address (autofill):</label>
+          <input
+            style={styles.input}
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={styles.buttonContainer}>
+          <button 
+            onClick={() => handleSubmit(false)} 
+            style={{...styles.button, ...styles.primaryButton}}
+          >
+            Looking for help?
+          </button>
+          <button 
+            onClick={() => handleSubmit(true)} 
+            style={{...styles.button, ...styles.secondaryButton}}
+          >
+            Looking to help?
+          </button>
+        </div>
       </div>
     </div>
   );
