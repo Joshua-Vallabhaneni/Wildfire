@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 
 function SustainabilityTracker() {
   const [tasks, setTasks] = useState([]);
+  const [showSubcategories, setShowSubcategories] = useState(false);
   // For simplicity, let's fetch all tasks and do some counting
 
   useEffect(() => {
@@ -41,14 +42,17 @@ function SustainabilityTracker() {
       <div>
         <h3>Sustainability ({sustainabilityCount}/{totalTasks})</h3>
         <ProgressBar percentage={completionPercentage(sustainabilityCount, totalTasks)} />
-        <button onClick={() => alert("Show subcategories...")}>View Subcategories</button>
-        {/* If we want to expand subcategories: */}
-        <div style={{ marginLeft: "20px", marginTop: "5px" }}>
-          <p>Ash & Debris Cleanup: {ashCount} tasks</p>
-          <p>Water Conservation: {waterCount} tasks</p>
-          <p>Habitat Restoration: {habitatCount} tasks</p>
-          <p>Soil Stabilization: {soilCount} tasks</p>
-        </div>
+        <button onClick={() => setShowSubcategories(!showSubcategories)}>
+          {showSubcategories ? 'Hide' : 'View'} Subcategories
+        </button>
+        {showSubcategories && (
+          <div style={{ marginLeft: "20px", marginTop: "5px" }}>
+            <p>Ash & Debris Cleanup: {ashCount} tasks</p>
+            <p>Water Conservation: {waterCount} tasks</p>
+            <p>Habitat Restoration: {habitatCount} tasks</p>
+            <p>Soil Stabilization: {soilCount} tasks</p>
+          </div>
+        )}
       </div>
       <h3>Infrastructure ({infrastructureCount}/{totalTasks})</h3>
       <ProgressBar percentage={completionPercentage(infrastructureCount, totalTasks)} />
