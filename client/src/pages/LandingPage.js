@@ -15,6 +15,7 @@ function LandingPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // LandingPage.js
   const handleSubmit = async (isVolunteer) => {
     try {
       const response = await fetch("http://localhost:8080/api/users", {
@@ -26,17 +27,26 @@ function LandingPage() {
           isVolunteer 
         })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
+      // Navigate to the correct initial step
       if (isVolunteer) {
-        navigate(`/volunteer/${data._id}`);
+        navigate(`/volunteer/${data._id}/availability`);
       } else {
-        navigate(`/requester/${data._id}`);
+        navigate(`/requester/${data._id}/availability`);
       }
     } catch (error) {
       console.error("Error creating user:", error);
+      // Add some user feedback here
+      alert("Error creating user. Please try again.");
     }
   };
+
 
   // Inline styles for immediate effect
   const styles = {
