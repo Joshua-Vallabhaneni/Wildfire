@@ -1,52 +1,42 @@
 // client/src/pages/RequesterFlow/RequesterAvailability.js
+
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import "./RequesterAvailability.css"; // <-- Import CSS file
 
-const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-const timeSlots = ["6am-9am","9am-12pm","12pm-3pm","3pm-6pm","6pm-9pm"];
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const timeSlots = ["6am-9am", "9am-12pm", "12pm-3pm", "3pm-6pm", "6pm-9pm"];
 
 function RequesterAvailability() {
   const { userId } = useParams();
   const navigate = useNavigate();
-
-  // We'll store availability in an object:
-  // { Monday: ["6am-9am", "9am-12pm"], Tuesday: [...], ... }
   const [availability, setAvailability] = useState({});
 
   const handleCheckboxChange = (day, slot) => {
     setAvailability((prev) => {
-      const slotsForDay = prev[day] || [];
-      if (slotsForDay.includes(slot)) {
-        // remove the slot
-        return {
-          ...prev,
-          [day]: slotsForDay.filter((s) => s !== slot)
-        };
-      } else {
-        // add the slot
-        return {
-          ...prev,
-          [day]: [...slotsForDay, slot]
-        };
-      }
+      const slots = prev[day] || [];
+      // Add or remove slot
+      return slots.includes(slot)
+        ? { ...prev, [day]: slots.filter((s) => s !== slot) }
+        : { ...prev, [day]: [...slots, slot] };
     });
   };
 
   const handleSubmit = async () => {
-    // Send to server
-    await fetch(`http://localhost:8080/api/users/${userId}/availability`, {
+    // Save the requestor's availability
+    await fetch(`http://localhost:8080/api/requesters/${userId}/availability`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ availability })
+      body: JSON.stringify({ availability }),
     });
-    // Move to next step
-    navigate(`/requester/${userId}/tasks`);
+    navigate(`/requester/${userId}/next-step`); // Adjust path if needed
   };
 
   return (
-    <div style={{ padding: "10px" }}>
-      <h2>Step 2: Select Availability</h2>
-      <table border="1" style={{ borderCollapse: "collapse" }}>
+    <div className="availability-container">
+      <h2 className="availability-title">Set Your Request Availability</h2>
+
+      <table className="availability-table">
         <thead>
           <tr>
             <th>Time Slots</th>
@@ -73,8 +63,8 @@ function RequesterAvailability() {
         </tbody>
       </table>
 
-      <button onClick={handleSubmit} style={{ marginTop: "20px" }}>
-        Next: Add Tasks
+      <button onClick={handleSubmit} className="availability-button">
+        Confirm Availability
       </button>
     </div>
   );

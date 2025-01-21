@@ -1,0 +1,61 @@
+.availability-container {
+    margin: 0 auto;
+    max-width: 800px;       /* Limits the page width for nicer readability */
+    background-color: #fff; /* White card-like background */
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    font-family: "Roboto", sans-serif;        /* Example modern font */
+  }
+  
+  .availability-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .availability-table {
+    width: 100%;
+    border-collapse: collapse;  /* Removes double borders */
+    margin-bottom: 1.5rem;
+  }
+  
+  .availability-table th,
+  .availability-table td {
+    border: 1px solid #ddd;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  
+  .availability-table thead {
+    background-color: #f7f7f7;
+  }
+  
+  .availability-table th {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .availability-table td input[type="checkbox"] {
+    transform: scale(1.3);     /* Makes checkboxes larger */
+    cursor: pointer;
+  }
+  
+  .availability-button {
+    display: inline-block;
+    background-color: #ff9800; /* Example orange color */
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .availability-button:hover {
+    background-color: #e68900;
+  }
+  

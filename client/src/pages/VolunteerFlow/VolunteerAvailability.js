@@ -1,6 +1,6 @@
-// client/src/pages/VolunteerFlow/VolunteerAvailability.js
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import "./VolunteerAvailability.css"; // <-- Import the CSS
 
 const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const timeSlots = ["6am-9am","9am-12pm","12pm-3pm","3pm-6pm","6pm-9pm"];
@@ -11,12 +11,20 @@ function VolunteerAvailability() {
   const [availability, setAvailability] = useState({});
 
   const handleCheckboxChange = (day, slot) => {
-    setAvailability((prev) => {
-      const slots = prev[day] || [];
-      if (slots.includes(slot)) {
-        return { ...prev, [day]: slots.filter(s => s !== slot) };
+    setAvailability(prev => {
+      const slotsForDay = prev[day] || [];
+      if (slotsForDay.includes(slot)) {
+        // Remove the slot
+        return {
+          ...prev,
+          [day]: slotsForDay.filter(s => s !== slot),
+        };
       } else {
-        return { ...prev, [day]: [...slots, slot] };
+        // Add the slot
+        return {
+          ...prev,
+          [day]: [...slotsForDay, slot],
+        };
       }
     });
   };
@@ -25,26 +33,28 @@ function VolunteerAvailability() {
     await fetch(`http://localhost:8080/api/users/${userId}/availability`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ availability })
+      body: JSON.stringify({ availability }),
     });
     navigate(`/volunteer/${userId}/skills`);
   };
 
   return (
-    <div style={{ padding: "10px" }}>
-      <h2>Select Your Availability</h2>
-      <table border="1">
+    <div className="availability-container">
+      <h2 className="availability-title">Select Your Availability</h2>
+      <table className="availability-table">
         <thead>
           <tr>
             <th>Time Slots</th>
-            {days.map((d) => <th key={d}>{d}</th>)}
+            {days.map(day => (
+              <th key={day}>{day}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {timeSlots.map((slot) => (
+          {timeSlots.map(slot => (
             <tr key={slot}>
               <td>{slot}</td>
-              {days.map((day) => (
+              {days.map(day => (
                 <td key={day}>
                   <input
                     type="checkbox"
@@ -58,7 +68,9 @@ function VolunteerAvailability() {
         </tbody>
       </table>
 
-      <button onClick={handleSubmit}>Next: Skills</button>
+      <button onClick={handleSubmit} className="availability-button">
+        Next: Skills
+      </button>
     </div>
   );
 }
