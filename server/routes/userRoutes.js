@@ -5,10 +5,11 @@ const router = express.Router();
 const User = require("../models/User");
 
 // @route POST /api/users
-// @desc  Create new user (either requester or volunteer)
+// @desc  Create a new user (requester or volunteer)
 router.post("/", async (req, res) => {
   try {
     const { name, phone, email, age, address, isVolunteer } = req.body;
+
     const user = new User({
       name,
       phone,
@@ -18,65 +19,74 @@ router.post("/", async (req, res) => {
       isVolunteer
     });
     await user.save();
-    res.status(201).json(user);
+    return res.status(201).json(user);
   } catch (error) {
     console.error("Error creating user", error);
-    res.status(500).json({ error: "Error creating user" });
+    return res.status(500).json({ error: "Error creating user" });
   }
 });
 
 // @route PUT /api/users/:userId/availability
-// @desc  Update user availability
+// @desc  Update user availability (works for both requesters and volunteers)
 router.put("/:userId/availability", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { availability } = req.body; // object of day -> array of times
+    const { availability } = req.body;
+
     const user = await User.findByIdAndUpdate(
       userId,
       { availability },
       { new: true }
     );
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json(user);
   } catch (error) {
     console.error("Error updating availability", error);
-    res.status(500).json({ error: "Error updating availability" });
+    return res.status(500).json({ error: "Error updating availability" });
   }
 });
 
 // @route PUT /api/users/:userId/tasks
-// @desc  Add tasks for a requester
+// @desc  Append tasks to a requester's tasksRequested array
 router.put("/:userId/tasks", async (req, res) => {
   try {
     const { userId } = req.params;
     const { tasksRequested } = req.body; // array of tasks
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    // Just override or push? For simplicity, let's override.
-    user.tasksRequested = tasksRequested;
+    // Append new tasks to tasksRequested
+    user.tasksRequested.push(...tasksRequested);
     await user.save();
-    res.json(user);
+    return res.json(user);
   } catch (error) {
-    console.error("Error adding tasks", error);
-    res.status(500).json({ error: "Error adding tasks" });
+    console.error("Error adding tasksRequested", error);
+    return res.status(500).json({ error: "Error adding tasksRequested" });
   }
 });
 
-// @route PUT /api/users/:userId/volunteerInterests
-// @desc  Save volunteer's skill interests
-router.put("/:userId/volunteerInterests", async (req, res) => {
+// @route PUT /api/users/:userId/tasksWilling
+// @desc  Append tasks/skills to a volunteer's tasksWilling array
+router.put("/:userId/tasksWilling", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { volunteerInterests } = req.body;
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { volunteerInterests },
-      { new: true }
-    );
-    res.json(user);
+    const { tasksWilling } = req.body; // array of tasks
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Append new tasks to tasksWilling
+    user.tasksWilling.push(...tasksWilling);
+    await user.save();
+    return res.json(user);
   } catch (error) {
-    console.error("Error updating volunteer interests", error);
-    res.status(500).json({ error: "Error updating volunteer interests" });
+    console.error("Error updating tasksWilling", error);
+    return res.status(500).json({ error: "Error updating tasksWilling" });
   }
 });
 
@@ -85,11 +95,13 @@ router.put("/:userId/volunteerInterests", async (req, res) => {
 router.get("/:userId", async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
-    if (!user) return res.status(404).json({ error: "Not found" });
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    return res.json(user);
   } catch (error) {
     console.error("Error getting user", error);
-    res.status(500).json({ error: "Error getting user" });
+    return res.status(500).json({ error: "Error getting user" });
   }
 });
 

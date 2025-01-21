@@ -22,15 +22,38 @@ function RequesterTasks() {
     setCurrentTask({ ...currentTask, specialtyRequired: e.target.checked });
   };
 
-  const addTask = () => {
-    setTasks([...tasks, currentTask]);
-    setCurrentTask({
-      title: "",
-      urgency: 5,
-      specialtyRequired: false,
-      category: "Sustainability"
-    });
+  const addTask = async () => {
+    try {
+      // Combine new task with existing local tasks
+      const updatedTasks = [...tasks, currentTask];
+      setTasks(updatedTasks);
+  
+      // Reset the form for next new task
+      setCurrentTask({
+        title: "",
+        urgency: 5,
+        specialtyRequired: false,
+        category: "Sustainability"
+      });
+  
+      // Make an immediate PUT request to add the newly created task
+      const response = await fetch(`http://localhost:8080/api/users/${userId}/tasks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasksRequested: [currentTask] }) 
+        // if server route is using push, we only send the single new task
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error adding the task to database");
+      }
+  
+      console.log("Task added successfully!");
+    } catch (error) {
+      console.error(error);
+    }
   };
+  
 
   const handleSubmit = async () => {
     // Put tasks in user table

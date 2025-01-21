@@ -1,8 +1,7 @@
 // client/src/pages/RequesterFlow/RequesterAvailability.js
-
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import "./RequesterAvailability.css"; // <-- Import CSS file
+import "./RequesterAvailability.css";
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const timeSlots = ["6am-9am", "9am-12pm", "12pm-3pm", "3pm-6pm", "6pm-9pm"];
@@ -10,26 +9,47 @@ const timeSlots = ["6am-9am", "9am-12pm", "12pm-3pm", "3pm-6pm", "6pm-9pm"];
 function RequesterAvailability() {
   const { userId } = useParams();
   const navigate = useNavigate();
+
+  // local state to track which slots each day has
   const [availability, setAvailability] = useState({});
 
   const handleCheckboxChange = (day, slot) => {
     setAvailability((prev) => {
-      const slots = prev[day] || [];
-      // Add or remove slot
-      return slots.includes(slot)
-        ? { ...prev, [day]: slots.filter((s) => s !== slot) }
-        : { ...prev, [day]: [...slots, slot] };
+      const slotsForDay = prev[day] || [];
+      if (slotsForDay.includes(slot)) {
+        // remove the slot
+        return {
+          ...prev,
+          [day]: slotsForDay.filter((s) => s !== slot),
+        };
+      } else {
+        // add the slot
+        return {
+          ...prev,
+          [day]: [...slotsForDay, slot],
+        };
+      }
     });
   };
 
   const handleSubmit = async () => {
-    // Save the requestor's availability
-    await fetch(`http://localhost:8080/api/requesters/${userId}/availability`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ availability }),
-    });
-    navigate(`/requester/${userId}/tasks`); // Adjust path if needed
+    try {
+      const response = await fetch(`http://localhost:8080/api/users/${userId}/availability`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availability }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update requester's availability in the database.");
+      }
+
+      // after success, navigate to the next step
+      navigate(`/requester/${userId}/tasks`);
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      alert("Error updating availability. Please try again.");
+    }
   };
 
   return (

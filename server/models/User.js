@@ -8,26 +8,38 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true },
   age: { type: Number },
   address: { type: String },
+  // isVolunteer: true => volunteer, false => requester
   isVolunteer: { type: Boolean, default: false },
-  // For both requesters and volunteers, store their availability
+
+  // Availability for both requesters and volunteers
+  // e.g. { Monday: ["6am-9am", "9am-12pm"], Tuesday: [...] }
   availability: {
-    // Example structure: { Monday: ["6am-9am", "9am-12pm"], Tuesday: [...] }
     type: Object,
     default: {}
   },
-  // For volunteers: store skills or tasks
-  volunteerInterests: { type: String },
 
-  // For requesters: store an array of tasks needed
-  tasksRequested: [{ 
-    title: String,
-    urgency: Number,
-    specialtyRequired: Boolean,
-    category: String
-  }],
+  // Volunteers: an array of objects with a single "title" field
+  tasksWilling: [
+    {
+      title: String
+    }
+  ],
 
-  // background check status
-  backgroundCheckStatus: { type: String, default: "pending" }
+  // Requesters: array of task objects
+  tasksRequested: [
+    {
+      title: String,
+      urgency: Number,
+      specialtyRequired: Boolean,
+      category: String
+    }
+  ],
+
+  // Background check status
+  backgroundCheckStatus: {
+    type: String,
+    default: "pending"
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);
