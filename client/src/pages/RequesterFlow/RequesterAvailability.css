@@ -1,65 +1,65 @@
 /* client/src/pages/RequesterFlow/RequesterAvailability.css */
+/* (No change needed here; just the same styles) */
 
 .availability-container {
-    margin: 0 auto;
-    max-width: 800px;
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-    font-family: "Arial", sans-serif;
-  }
-  
-  .availability-title {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .availability-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1.5rem;
-  }
-  
-  .availability-table thead {
-    background-color: #f3f3f3;
-  }
-  
-  .availability-table th,
-  .availability-table td {
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-    text-align: center;
-    font-size: 1rem;
-  }
-  
-  .availability-table th {
-    font-weight: 500;
-    color: #555;
-  }
-  
-  .availability-table td input[type="checkbox"] {
-    transform: scale(1.4);
-    cursor: pointer;
-  }
-  
-  .availability-button {
-    display: inline-block;
-    background-color: #4CAF50; /* Green button to differentiate */
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .availability-button:hover {
-    background-color: #45a049;
-  }
-  
+  margin: 0 auto;
+  max-width: 800px;
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  font-family: "Arial", sans-serif;
+}
+
+.availability-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.availability-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+.availability-table thead {
+  background-color: #f3f3f3;
+}
+
+.availability-table th,
+.availability-table td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.availability-table th {
+  font-weight: 500;
+  color: #555;
+}
+
+.availability-table td input[type="checkbox"] {
+  transform: scale(1.4);
+  cursor: pointer;
+}
+
+.availability-button {
+  display: inline-block;
+  background-color: #4caf50; /* green button */
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.availability-button:hover {
+  background-color: #45a049;
+}

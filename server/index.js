@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
-app.use("/api/tasks", require("./routes/taskRoutes"));
+// Removed the old tasks route
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/orgs", require("./routes/orgRoutes"));
 
