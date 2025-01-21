@@ -29,7 +29,7 @@ function RequesterAvailability() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ availability }),
     });
-    navigate(`/requester/${userId}/next-step`); // Adjust path if needed
+    navigate(`/requester/${userId}/tasks`); // Adjust path if needed
   };
 
   return (
