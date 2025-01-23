@@ -1,9 +1,11 @@
 // client/src/components/MatchingDashboard.js
 import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { MapPin, Clock, Shield, Tag } from 'lucide-react';
 
+/**
+ * TaskCard Component
+ * - Replaces <Card> with simple <div> containers
+ */
 const TaskCard = ({ task, onClick }) => {
   const urgencyColor = (urgency) => {
     if (urgency >= 8) return 'text-red-600';
@@ -12,16 +14,22 @@ const TaskCard = ({ task, onClick }) => {
   };
 
   return (
-    <Card className="mb-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={onClick}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold flex justify-between items-start">
+    <div
+      className="mb-4 p-4 border rounded shadow hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
+      {/* This section replaces CardHeader + CardTitle */}
+      <div className="pb-2">
+        <div className="text-lg font-semibold flex justify-between items-start">
           <span>{task.title}</span>
           <span className={`text-sm ${urgencyColor(task.urgency)}`}>
             Urgency: {task.urgency}/10
           </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </div>
+      </div>
+
+      {/* This section replaces CardContent */}
+      <div>
         <div className="space-y-2">
           {task.organization && (
             <div className="flex items-center text-sm text-gray-600">
@@ -55,20 +63,25 @@ const TaskCard = ({ task, onClick }) => {
             Match Score: {(task.matchScore * 100).toFixed(1)}%
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
+/**
+ * MatchesSection Component
+ * - Replaces <Alert> with a simple <div> block for "No matches found".
+ */
 const MatchesSection = ({ title, tasks, emptyMessage }) => {
   if (!tasks || tasks.length === 0) {
     return (
       <div className="mb-8">
         <h3 className="text-xl font-bold mb-4">{title}</h3>
-        <Alert>
-          <AlertTitle>No matches found</AlertTitle>
-          <AlertDescription>{emptyMessage}</AlertDescription>
-        </Alert>
+        {/* Replaced Alert with a simpler alert-like div */}
+        <div className="border border-orange-200 bg-orange-50 p-4 rounded">
+          <strong className="block mb-1">No matches found</strong>
+          <p className="text-sm text-gray-600">{emptyMessage}</p>
+        </div>
       </div>
     );
   }
@@ -78,8 +91,8 @@ const MatchesSection = ({ title, tasks, emptyMessage }) => {
       <h3 className="text-xl font-bold mb-4">{title}</h3>
       <div className="space-y-4">
         {tasks.map((task, index) => (
-          <TaskCard 
-            key={index} 
+          <TaskCard
+            key={index}
             task={task}
             onClick={() => {
               if (task.organization?.link) {
@@ -93,6 +106,10 @@ const MatchesSection = ({ title, tasks, emptyMessage }) => {
   );
 };
 
+/**
+ * MatchingDashboard Component
+ * - Uses the above two components to show matches for a volunteer.
+ */
 const MatchingDashboard = ({ volunteerId }) => {
   const [matches, setMatches] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,32 +144,32 @@ const MatchingDashboard = ({ volunteerId }) => {
   }
 
   if (error) {
+    // Basic error message instead of <Alert>
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <div className="p-4 max-w-lg mx-auto mt-8 border border-red-300 bg-red-50 text-red-800">
+        <strong>Error:</strong> {error}
+      </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-8">Your Matched Opportunities</h1>
-      
-      <MatchesSection 
-        title="Top Matches from Individual Requesters" 
+
+      <MatchesSection
+        title="Top Matches from Individual Requesters"
         tasks={matches?.requestorTasks || []}
         emptyMessage="No matching tasks from individual requesters found."
       />
-      
-      <MatchesSection 
-        title="Matches from Private Organizations" 
+
+      <MatchesSection
+        title="Matches from Private Organizations"
         tasks={matches?.privateOrgs || []}
         emptyMessage="No matching tasks from private organizations found."
       />
-      
-      <MatchesSection 
-        title="Matches from Government Organizations" 
+
+      <MatchesSection
+        title="Matches from Government Organizations"
         tasks={matches?.governmentOrgs || []}
         emptyMessage="No matching tasks from government organizations found."
       />
