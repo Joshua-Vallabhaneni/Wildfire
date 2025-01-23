@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 const Organization = require("../models/Organization");
 
-// Example: Replace or expand your existing seeding data here
 router.post("/seed", async (req, res) => {
   try {
     const orgs = [
@@ -13,7 +12,30 @@ router.post("/seed", async (req, res) => {
         address: "123 LA Road, Los Angeles, CA",
         urgencyLevel: 7,
         specialtyRequired: false,
-        taskType: "Emergency Response"
+        taskType: "Emergency Response",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Distribute Relief Supplies",
+            urgency: 7,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+          {
+            title: "Set Up Emergency Shelter",
+            urgency: 8,
+            specialtyRequired: true,
+            category: "Emergency Response",
+          },
+        ],
+        availability: {
+          Monday: ["9am-12pm", "3pm-6pm"],
+          Tuesday: ["6am-9am"],
+          Friday: ["12pm-3pm", "3pm-6pm"],
+        },
       },
       {
         name: "The Salvation Army",
@@ -21,7 +43,30 @@ router.post("/seed", async (req, res) => {
         address: "305 Salvation St, Pasadena, CA",
         urgencyLevel: 6,
         specialtyRequired: false,
-        taskType: "Emergency Response"
+        taskType: "Emergency Response",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Operate Mobile Kitchen",
+            urgency: 7,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+          {
+            title: "Deliver Clothing Donations",
+            urgency: 5,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+        ],
+        availability: {
+          Monday: ["3pm-6pm"],
+          Wednesday: ["9am-12pm"],
+          Sunday: ["6am-9am", "9am-12pm"],
+        },
       },
       {
         name: "Team Rubicon",
@@ -29,7 +74,30 @@ router.post("/seed", async (req, res) => {
         address: "55 Rubicon Rd, Los Angeles, CA",
         urgencyLevel: 8,
         specialtyRequired: true,
-        taskType: "Safety and Prevention"
+        taskType: "Safety and Prevention",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Rebuild Damaged Structures",
+            urgency: 9,
+            specialtyRequired: true,
+            category: "Infrastructure",
+          },
+          {
+            title: "Run Debris Removal Operation",
+            urgency: 8,
+            specialtyRequired: true,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Tuesday: ["9am-12pm", "12pm-3pm"],
+          Thursday: ["3pm-6pm"],
+          Saturday: ["6pm-9pm"],
+        },
       },
       {
         name: "Maui Cultural Lands",
@@ -37,7 +105,30 @@ router.post("/seed", async (req, res) => {
         address: "100 Honoapiilani Hwy, Lahaina, HI",
         urgencyLevel: 9,
         specialtyRequired: true,
-        taskType: "Habitat Restoration"
+        taskType: "Habitat Restoration",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Restore Native Flora",
+            urgency: 8,
+            specialtyRequired: true,
+            category: "Sustainability",
+          },
+          {
+            title: "Replant Burned Areas",
+            urgency: 9,
+            specialtyRequired: true,
+            category: "Sustainability",
+          },
+        ],
+        availability: {
+          Monday: ["6am-9am"],
+          Wednesday: ["9am-12pm", "12pm-3pm"],
+          Saturday: ["12pm-3pm"],
+        },
       },
       {
         name: "Los Angeles Fire Department Foundation",
@@ -45,7 +136,30 @@ router.post("/seed", async (req, res) => {
         address: "200 N Main St, Los Angeles, CA",
         urgencyLevel: 9,
         specialtyRequired: true,
-        taskType: "Infrastructure"
+        taskType: "Infrastructure",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Repair Station Equipment",
+            urgency: 8,
+            specialtyRequired: true,
+            category: "Infrastructure",
+          },
+          {
+            title: "Upgrade Communications Systems",
+            urgency: 9,
+            specialtyRequired: true,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Tuesday: ["3pm-6pm"],
+          Friday: ["6am-9am", "9am-12pm"],
+          Sunday: ["12pm-3pm"],
+        },
       },
       {
         name: "Rockville Volunteer Fire Department (RVFD)",
@@ -53,7 +167,30 @@ router.post("/seed", async (req, res) => {
         address: "380 Hungerford Dr, Rockville, MD",
         urgencyLevel: 5,
         specialtyRequired: false,
-        taskType: "Emergency Response"
+        taskType: "Emergency Response",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Respond to 911 Calls",
+            urgency: 8,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+          {
+            title: "Host Fire Safety Training",
+            urgency: 6,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Monday: ["9am-12pm"],
+          Thursday: ["6am-9am"],
+          Friday: ["3pm-6pm", "6pm-9pm"],
+        },
       },
       {
         name: "Montgomery County Volunteer Fire-Rescue Association (MCVFRA)",
@@ -61,16 +198,61 @@ router.post("/seed", async (req, res) => {
         address: "101 Monroe St, Rockville, MD",
         urgencyLevel: 6,
         specialtyRequired: false,
-        taskType: "Safety and Prevention"
+        taskType: "Safety and Prevention",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Smoke Alarm Installations",
+            urgency: 5,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+          {
+            title: "Conduct Community Awareness Events",
+            urgency: 4,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Tuesday: ["6am-9am", "12pm-3pm"],
+          Wednesday: ["9am-12pm"],
+          Saturday: ["3pm-6pm"],
+        },
       },
-      // Government/Training-specific references:
       {
         name: "NVFC FireCorps",
         link: "https://www.nvfc.org/programs/firecorps/",
         address: "Virtual / Nationwide",
         urgencyLevel: 3,
         specialtyRequired: false,
-        taskType: "Volunteer Training"
+        taskType: "Volunteer Training",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Online Volunteer Coordination",
+            urgency: 3,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+          {
+            title: "Assist with FireCorps Webinars",
+            urgency: 2,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Wednesday: ["12pm-3pm"],
+          Thursday: ["9am-12pm"],
+          Sunday: ["6am-9am", "9am-12pm"],
+        },
       },
       {
         name: "FEMA CERT",
@@ -78,7 +260,30 @@ router.post("/seed", async (req, res) => {
         address: "Virtual / Nationwide",
         urgencyLevel: 4,
         specialtyRequired: false,
-        taskType: "Community Response Team"
+        taskType: "Community Response Team",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Community Emergency Drills",
+            urgency: 6,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+          {
+            title: "Disaster Preparedness Education",
+            urgency: 5,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Tuesday: ["3pm-6pm"],
+          Friday: ["9am-12pm"],
+          Saturday: ["12pm-3pm", "3pm-6pm"],
+        },
       },
       {
         name: "Ready.gov",
@@ -86,7 +291,30 @@ router.post("/seed", async (req, res) => {
         address: "Virtual / Nationwide",
         urgencyLevel: 2,
         specialtyRequired: false,
-        taskType: "Preparedness / Training"
+        taskType: "Preparedness / Training",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Publish Preparedness Guides",
+            urgency: 4,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+          {
+            title: "Host Online Training Sessions",
+            urgency: 3,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+        ],
+        availability: {
+          Monday: ["6am-9am", "9am-12pm"],
+          Wednesday: ["3pm-6pm"],
+          Sunday: ["6pm-9pm"],
+        },
       },
       {
         name: "Make Me A Firefighter",
@@ -94,7 +322,30 @@ router.post("/seed", async (req, res) => {
         address: "Virtual / Nationwide",
         urgencyLevel: 4,
         specialtyRequired: true,
-        taskType: "Firefighter Training"
+        taskType: "Firefighter Training",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Recruit Prospective Firefighters",
+            urgency: 6,
+            specialtyRequired: true,
+            category: "Emergency Response",
+          },
+          {
+            title: "Manage Fire Academy Contacts",
+            urgency: 5,
+            specialtyRequired: true,
+            category: "Safety and Prevention",
+          },
+        ],
+        availability: {
+          Tuesday: ["9am-12pm"],
+          Thursday: ["12pm-3pm", "3pm-6pm"],
+          Saturday: ["9am-12pm"],
+        },
       },
       {
         name: "Cal Volunteers Wildfire Recovery",
@@ -102,7 +353,30 @@ router.post("/seed", async (req, res) => {
         address: "Sacramento, CA",
         urgencyLevel: 8,
         specialtyRequired: false,
-        taskType: "Sustainability"
+        taskType: "Sustainability",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Coordinate Environmental Clean-Up",
+            urgency: 7,
+            specialtyRequired: false,
+            category: "Sustainability",
+          },
+          {
+            title: "Restore Forested Areas",
+            urgency: 8,
+            specialtyRequired: true,
+            category: "Sustainability",
+          },
+        ],
+        availability: {
+          Monday: ["6am-9am"],
+          Tuesday: ["12pm-3pm", "3pm-6pm"],
+          Friday: ["6pm-9pm"],
+        },
       },
       {
         name: "LAFD Volunteer",
@@ -110,22 +384,46 @@ router.post("/seed", async (req, res) => {
         address: "201 N Figueroa St, Los Angeles, CA",
         urgencyLevel: 8,
         specialtyRequired: true,
-        taskType: "Community Education"
+        taskType: "Community Education",
+
+        // NEW FIELDS:
+        isVolunteer: false,
+        tasksWilling: [],
+        tasksRequested: [
+          {
+            title: "Fire Safety Workshops",
+            urgency: 6,
+            specialtyRequired: false,
+            category: "Safety and Prevention",
+          },
+          {
+            title: "Install Home Smoke Alarms",
+            urgency: 7,
+            specialtyRequired: false,
+            category: "Emergency Response",
+          },
+        ],
+        availability: {
+          Wednesday: ["6am-9am", "9am-12pm"],
+          Thursday: ["3pm-6pm"],
+          Sunday: ["9am-12pm"],
+        },
       },
-      // ...Add as many as you like
     ];
 
-    // Clear existing orgs or not, depending on your preference
+    // Clear existing orgs
     await Organization.deleteMany({});
+    // Insert updated orgs
     await Organization.insertMany(orgs);
-    res.json({ message: "Seeded organizations successfully!" });
+
+    res.json({ message: "Seeded organizations successfully with extended fields!" });
   } catch (error) {
     console.error("Error seeding organizations", error);
     res.status(500).json({ error: "Error seeding organizations" });
   }
 });
 
-// GET all orgs (already in your code)
+// GET all orgs
 router.get("/", async (req, res) => {
   try {
     const orgs = await Organization.find({});

@@ -56,13 +56,13 @@ function RequesterTasks() {
   
 
   const handleSubmit = async () => {
-    // Put tasks in user table
-    await fetch(`http://localhost:8080/api/users/${userId}/tasks`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tasksRequested: tasks })
-    });
-    navigate(`/requester/${userId}/background-check`);
+    // // Put tasks in user table
+    // await fetch(`http://localhost:8080/api/users/${userId}/tasks`, {
+    //   method: "PUT",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ tasksRequested: tasks })
+    // });
+    navigate(`/requester/${userId}/dashboard`);
   };
 
   return (
@@ -115,7 +115,7 @@ function RequesterTasks() {
         ))}
       </ul>
 
-      <button onClick={handleSubmit}>Next: Background Check</button>
+      <button onClick={handleSubmit}>Next: Dashboard</button>
     </div>
   );
 }

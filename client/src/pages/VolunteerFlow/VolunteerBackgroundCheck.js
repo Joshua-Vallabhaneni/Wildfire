@@ -15,7 +15,7 @@ function VolunteerBackgroundCheck() {
   }, []);
 
   const proceed = () => {
-    navigate(`/volunteer/${userId}/dashboard`);
+    navigate(`/volunteer/${userId}/availability`);
   };
 
   return (
@@ -23,7 +23,7 @@ function VolunteerBackgroundCheck() {
       <h2>Background Check Undergoing</h2>
       <p>Status: {status}</p>
       {status === "Approved" && (
-        <button onClick={proceed}>Proceed to Dashboard</button>
+        <button onClick={proceed}>Proceed to Availability</button>
       )}
     </div>
   );
