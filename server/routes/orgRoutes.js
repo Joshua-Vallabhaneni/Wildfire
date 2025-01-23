@@ -100,37 +100,6 @@ router.post("/seed", async (req, res) => {
         },
       },
       {
-        name: "Maui Cultural Lands",
-        link: "https://time.com/6992318/maui-cultural-lands/",
-        address: "100 Honoapiilani Hwy, Lahaina, HI",
-        urgencyLevel: 9,
-        specialtyRequired: true,
-        taskType: "Habitat Restoration",
-
-        // NEW FIELDS:
-        isVolunteer: false,
-        tasksWilling: [],
-        tasksRequested: [
-          {
-            title: "Restore Native Flora",
-            urgency: 8,
-            specialtyRequired: true,
-            category: "Sustainability",
-          },
-          {
-            title: "Replant Burned Areas",
-            urgency: 9,
-            specialtyRequired: true,
-            category: "Sustainability",
-          },
-        ],
-        availability: {
-          Monday: ["6am-9am"],
-          Wednesday: ["9am-12pm", "12pm-3pm"],
-          Saturday: ["12pm-3pm"],
-        },
-      },
-      {
         name: "Los Angeles Fire Department Foundation",
         link: "https://supportlafd.org/",
         address: "200 N Main St, Los Angeles, CA",
@@ -159,68 +128,6 @@ router.post("/seed", async (req, res) => {
           Tuesday: ["3pm-6pm"],
           Friday: ["6am-9am", "9am-12pm"],
           Sunday: ["12pm-3pm"],
-        },
-      },
-      {
-        name: "Rockville Volunteer Fire Department (RVFD)",
-        link: "https://rvfd.org/volunteer/",
-        address: "380 Hungerford Dr, Rockville, MD",
-        urgencyLevel: 5,
-        specialtyRequired: false,
-        taskType: "Emergency Response",
-
-        // NEW FIELDS:
-        isVolunteer: false,
-        tasksWilling: [],
-        tasksRequested: [
-          {
-            title: "Respond to 911 Calls",
-            urgency: 8,
-            specialtyRequired: false,
-            category: "Emergency Response",
-          },
-          {
-            title: "Host Fire Safety Training",
-            urgency: 6,
-            specialtyRequired: false,
-            category: "Safety and Prevention",
-          },
-        ],
-        availability: {
-          Monday: ["9am-12pm"],
-          Thursday: ["6am-9am"],
-          Friday: ["3pm-6pm", "6pm-9pm"],
-        },
-      },
-      {
-        name: "Montgomery County Volunteer Fire-Rescue Association (MCVFRA)",
-        link: "https://www.mocofirerescue.org/",
-        address: "101 Monroe St, Rockville, MD",
-        urgencyLevel: 6,
-        specialtyRequired: false,
-        taskType: "Safety and Prevention",
-
-        // NEW FIELDS:
-        isVolunteer: false,
-        tasksWilling: [],
-        tasksRequested: [
-          {
-            title: "Smoke Alarm Installations",
-            urgency: 5,
-            specialtyRequired: false,
-            category: "Safety and Prevention",
-          },
-          {
-            title: "Conduct Community Awareness Events",
-            urgency: 4,
-            specialtyRequired: false,
-            category: "Safety and Prevention",
-          },
-        ],
-        availability: {
-          Tuesday: ["6am-9am", "12pm-3pm"],
-          Wednesday: ["9am-12pm"],
-          Saturday: ["3pm-6pm"],
         },
       },
       {
