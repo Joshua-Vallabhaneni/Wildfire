@@ -20,6 +20,9 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/orgs", require("./routes/orgRoutes"));
 
+app.use("/api/background-check", require("./routes/backgroundCheckRoutes"));
+
+
 // Simple test endpoint
 app.get("/", (req, res) => {
   res.send("Server is running. Visit /api/... for API routes.");
