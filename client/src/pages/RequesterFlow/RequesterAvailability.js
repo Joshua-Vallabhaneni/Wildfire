@@ -44,7 +44,7 @@ function RequesterAvailability() {
         throw new Error("Failed to update requester's availability in the database.");
       }
 
-      navigate(`/volunteer/${userId}/skills`);
+      navigate(`/requester/${userId}/tasks`);
     } catch (error) {
       console.error("Error updating availability:", error);
       alert("Error updating availability. Please try again.");
