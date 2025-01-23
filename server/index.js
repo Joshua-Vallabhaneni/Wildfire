@@ -22,6 +22,8 @@ app.use("/api/orgs", require("./routes/orgRoutes"));
 
 app.use("/api/background-check", require("./routes/backgroundCheckRoutes"));
 
+app.use("/api/matching", require("./routes/matchingRoutes")); // <--- IMPORTANT
+
 
 // Simple test endpoint
 app.get("/", (req, res) => {
