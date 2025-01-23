@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import MapView from "../../components/MapView";
+import MatchingDashboard from "../../components/MatchingDashboard";
 
 // Organization Card Component
 const OrgCard = ({ org, userLocation, distance }) => {
@@ -94,6 +95,7 @@ const OrgCard = ({ org, userLocation, distance }) => {
 function VolunteerDashboard() {
   const { userId } = useParams();
   const [viewMode, setViewMode] = useState("list");
+  const [displayMode, setDisplayMode] = useState("browse"); // "browse" or "matches"
   const [orgs, setOrgs] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [distances, setDistances] = useState({});
@@ -125,12 +127,7 @@ function VolunteerDashboard() {
         if (!response.ok) throw new Error("Failed to fetch organizations");
         const data = await response.json();
         
-        console.log('Raw data from API:', data); // Debug log
         setOrgs(data);
-        
-        // Debug logs
-        console.log(`Total organizations loaded: ${data.length}`);
-        console.log('Organizations:', data.map(org => org.name));
         
       } catch (err) {
         console.error("Error fetching organizations:", err);
@@ -215,68 +212,76 @@ function VolunteerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {viewMode === "list" ? (
-        <div className="p-4 max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Volunteer Opportunities
-            </h2>
+      <div className="p-4 max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Volunteer Dashboard
+          </h2>
+          <div className="space-x-4">
             <button
-              onClick={() => setViewMode("map")}
+              onClick={() => setDisplayMode(displayMode === "browse" ? "matches" : "browse")}
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
             >
-              Switch to Map View
+              {displayMode === "browse" ? "View Matched Tasks" : "Browse Organizations"}
             </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 text-sm text-gray-500 italic">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-700">
-                Private Organizations
-              </h3>
-              {orgs
-                .filter((o) => !o.name.toLowerCase().includes("fire"))
-                .map((org) => (
-                  <OrgCard
-                    key={org._id}
-                    org={org}
-                    userLocation={userLocation}
-                    distance={distances[org._id]}
-                  />
-                ))}
-            </div>
-
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-700">
-                Government Organizations
-              </h3>
-              {orgs
-                .filter((o) => o.name.toLowerCase().includes("fire"))
-                .map((org) => (
-                  <OrgCard
-                    key={org._id}
-                    org={org}
-                    userLocation={userLocation}
-                    distance={distances[org._id]}
-                  />
-                ))}
-            </div>
+            {displayMode === "browse" && (
+              <button
+                onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                Switch to {viewMode === "list" ? "Map" : "List"} View
+              </button>
+            )}
           </div>
         </div>
-      ) : (
-        <MapView
-          orgs={orgs}
-          userLocation={userLocation}
-          setView={setViewMode}
-          view={viewMode}
-        />
-      )}
+
+        {displayMode === "browse" ? (
+          viewMode === "list" ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-700">
+                  Private Organizations
+                </h3>
+                {orgs
+                  .filter((o) => !o.name.toLowerCase().includes("fire"))
+                  .map((org) => (
+                    <OrgCard
+                      key={org._id}
+                      org={org}
+                      userLocation={userLocation}
+                      distance={distances[org._id]}
+                    />
+                  ))}
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-700">
+                  Government Organizations
+                </h3>
+                {orgs
+                  .filter((o) => o.name.toLowerCase().includes("fire"))
+                  .map((org) => (
+                    <OrgCard
+                      key={org._id}
+                      org={org}
+                      userLocation={userLocation}
+                      distance={distances[org._id]}
+                    />
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <MapView
+              orgs={orgs}
+              userLocation={userLocation}
+              setView={setViewMode}
+              view={viewMode}
+            />
+          )
+        ) : (
+          <MatchingDashboard volunteerId={userId} />
+        )}
+      </div>
     </div>
   );
 }
