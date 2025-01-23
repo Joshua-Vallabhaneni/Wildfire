@@ -35,7 +35,7 @@ function VolunteerAvailability() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ availability }),
     });
-    navigate(`/requester/${userId}/tasks`);
+    navigate(`/volunteer/${userId}/skills`);
   };
 
   return (
