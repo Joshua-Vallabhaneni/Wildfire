@@ -2,28 +2,30 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  
- "dependencies": {
-  "ajv": "^8.17.1",
-  "ajv-keywords": "^5.1.0",
-  "cra-template": "1.2.0",
-  "leaflet": "^1.9.4",
-  "react": "^18.2.0",
-  "react-dom": "^18.2.0",
-  "react-leaflet": "^4.1.2",
-  "react-router-dom": "^6.14.2",
-  "react-scripts": "5.0.1"
-},
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-keywords": "^5.1.0",
+    "cra-template": "1.2.0",
+    "leaflet": "^1.9.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.1.2",
+    "react-router-dom": "^6.14.2",
+    "react-scripts": "5.0.1"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
-      "react-app/jest"
+      "react-app/jest",
+      "plugin:storybook/recommended"
     ]
   },
   "browserslist": {
@@ -37,5 +39,27 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.4",
+    "@storybook/addon-essentials": "^8.5.1",
+    "@storybook/addon-interactions": "^8.5.1",
+    "@storybook/addon-onboarding": "^8.5.1",
+    "@storybook/addon-styling": "^1.3.7",
+    "@storybook/blocks": "^8.5.1",
+    "@storybook/preset-create-react-app": "^8.5.1",
+    "@storybook/react": "^8.5.1",
+    "@storybook/react-webpack5": "^8.5.1",
+    "@storybook/test": "^8.5.1",
+    "autoprefixer": "^10.4.20",
+    "css-loader": "^7.1.2",
+    "eslint-plugin-storybook": "^0.11.2",
+    "postcss": "^8.5.1",
+    "postcss-loader": "^8.1.1",
+    "prop-types": "^15.8.1",
+    "storybook": "^8.5.1",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "webpack": "^5.97.1"
   }
 }
