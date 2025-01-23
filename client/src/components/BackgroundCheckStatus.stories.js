@@ -5,25 +5,39 @@ export default {
   title: 'Components/BackgroundCheckStatus',
 };
 
-export const Default = {
+// Successful check with both indicators positive
+export const FullyVerified = {
   args: {
     searchResults: {
-      organic_results: [
-        { link: 'https://linkedin.com/in/someone' },
-        { link: 'https://github.com/someone' },
-        { 
-          link: 'https://news.com/article',
-          snippet: 'Won an award for outstanding achievement'
-        }
-      ]
+      resultsFound: 15,
+      hasTrustedPresence: true
     }
   }
 };
 
-export const NoResults = {
+// Some online presence but no trusted platforms
+export const PartiallyVerified = {
   args: {
     searchResults: {
-      organic_results: []
+      resultsFound: 5,
+      hasTrustedPresence: false
     }
+  }
+};
+
+// No verification success
+export const NotVerified = {
+  args: {
+    searchResults: {
+      resultsFound: 0,
+      hasTrustedPresence: false
+    }
+  }
+};
+
+// Loading or error state
+export const NoResults = {
+  args: {
+    searchResults: null
   }
 };

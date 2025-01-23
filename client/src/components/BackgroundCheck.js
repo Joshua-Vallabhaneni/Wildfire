@@ -81,7 +81,12 @@ function BackgroundCheck({ userType }) {
       <div className="mt-6 space-y-6">
         {/* Status Categories */}
         {debugInfo?.nameResults && (
-          <BackgroundCheckStatus searchResults={debugInfo.nameResults} />
+          <BackgroundCheckStatus 
+            searchResults={{
+              resultsFound: debugInfo.nameResults.resultsFound,
+              hasTrustedPresence: debugInfo.nameResults.hasTrustedPresence
+            }}
+          />
         )}
         
         {/* Technical Details */}
@@ -93,16 +98,6 @@ function BackgroundCheck({ userType }) {
                 <div>
                   <h4 className="font-medium">Search Query:</h4>
                   <pre className="bg-white p-2 rounded">{debugInfo.nameQuery}</pre>
-                </div>
-              )}
-              
-              {debugInfo.resultsFound && (
-                <div>
-                  <h4 className="font-medium">Results Found:</h4>
-                  <ul className="list-disc pl-5">
-                    <li>Organic Results: {debugInfo.resultsFound.name}</li>
-                    <li>Images: {debugInfo.resultsFound.images}</li>
-                  </ul>
                 </div>
               )}
               
