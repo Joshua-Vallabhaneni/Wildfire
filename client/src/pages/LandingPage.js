@@ -36,9 +36,9 @@ function LandingPage() {
       
       // Navigate to the correct initial step
       if (isVolunteer) {
-        navigate(`/volunteer/${data._id}/availability`);
+        navigate(`/volunteer/${data._id}/background-check`);
       } else {
-        navigate(`/requester/${data._id}/availability`);
+        navigate(`/requester/${data._id}/background-check`);
       }
     } catch (error) {
       console.error("Error creating user:", error);

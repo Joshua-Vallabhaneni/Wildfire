@@ -29,7 +29,7 @@ function VolunteerSkills() {
       }
 
       // Navigate to next step: background check
-      navigate(`/volunteer/${userId}/background-check`);
+      navigate(`/volunteer/${userId}/dashboard`);
     } catch (error) {
       console.error("Error updating tasksWilling:", error);
       alert("Unable to save your tasks/skills. Please try again.");
@@ -46,7 +46,7 @@ function VolunteerSkills() {
         onChange={(e) => setSkillsText(e.target.value)}
       />
       <br />
-      <button onClick={handleSubmit}>Next: Background Check</button>
+      <button onClick={handleSubmit}>Next: Dashboard</button>
     </div>
   );
 }
