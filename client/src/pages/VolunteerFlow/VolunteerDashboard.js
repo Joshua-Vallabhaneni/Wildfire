@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import MapView from "../../components/MapView";
+import MatchingDashboard from "../../components/MatchingDashboard";
 
-// Organization Card Component
-const OrgCard = ({ org, userLocation, distance }) => {
+const OrgCard = ({ org, distance }) => {
   const [expanded, setExpanded] = useState(false);
 
   const cardStyle = {
@@ -34,38 +34,33 @@ const OrgCard = ({ org, userLocation, distance }) => {
         <div>
           <h3 className="font-bold text-lg">{org.name}</h3>
           <p className="text-sm text-gray-600">{org.address}</p>
-          {!org.address.toLowerCase().includes('virtual') && 
-           !org.address.toLowerCase().includes('nationwide') && 
-           distance && (
+          {distance && (
             <p className="text-sm text-gray-500 mt-1">{distance} miles away</p>
           )}
         </div>
-        <span className="text-orange-500">
-          {expanded ? "▼" : "▶"}
-        </span>
+        <span className="text-orange-500">{expanded ? "▼" : "▶"}</span>
       </div>
 
       {expanded && (
         <div className="mt-4">
           <div className="mb-2">
-            <span className="font-semibold">Urgency Level:</span>{" "}
-            <span className={`text-${org.urgencyLevel > 7 ? 'red' : 'orange'}-500`}>
+            <strong>Urgency Level:</strong>{" "}
+            <span style={{ color: org.urgencyLevel > 7 ? "red" : "orange" }}>
               {org.urgencyLevel}/10
             </span>
           </div>
-          
+
           <div className="mb-2">
-            <span className="font-semibold">Specialty Required:</span>{" "}
+            <strong>Specialty Required:</strong>{" "}
             {org.specialtyRequired ? "Yes" : "No"}
           </div>
-          
+
           <div className="mb-2">
-            <span className="font-semibold">Tasks:</span>
+            <strong>Tasks:</strong>
             <ul className="list-disc ml-6 mt-1">
               {org.tasksRequested.map((task, index) => (
                 <li key={index} className="text-sm">
-                  {task.title}
-                  <span className="text-gray-500"> - Urgency: {task.urgency}/10</span>
+                  {task.title} – Urgency: {task.urgency}/10
                 </li>
               ))}
             </ul>
@@ -90,51 +85,75 @@ const OrgCard = ({ org, userLocation, distance }) => {
   );
 };
 
-// Main VolunteerDashboard Component
 function VolunteerDashboard() {
   const { userId } = useParams();
   const [viewMode, setViewMode] = useState("list");
+  const [displayMode, setDisplayMode] = useState("browse");
   const [orgs, setOrgs] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [warning, setWarning] = useState(null);
   const [distances, setDistances] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
-    // Get user's geolocation
+    console.log('VolunteerDashboard mounted with userId:', userId);
+    setDebugInfo(prev => ({ ...prev, userId }));
+
+    if (!userId) {
+      console.error('No userId available in params');
+      setWarning('User ID not found. Please try logging in again.');
+      setLoading(false);
+      return;
+    }
+
+    // Get location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserLocation({
+          const location = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-          });
+          };
+          console.log('Got user location:', location);
+          setUserLocation(location);
+          setDebugInfo(prev => ({ ...prev, location }));
         },
         (error) => {
           console.error("Error getting location:", error);
-          setError("Unable to get your location. Some features may be limited.");
+          setWarning("Unable to get your location. Some features may be limited.");
+          const defaultLocation = { lat: 34.0522, lng: -118.2437 };
+          setUserLocation(defaultLocation);
+          setDebugInfo(prev => ({ ...prev, locationError: error.message, defaultLocation }));
         }
       );
+    } else {
+      const defaultLocation = { lat: 34.0522, lng: -118.2437 };
+      setWarning("Geolocation is not supported by your browser.");
+      setUserLocation(defaultLocation);
+      setDebugInfo(prev => ({ ...prev, geolocationSupport: false, defaultLocation }));
     }
 
     // Fetch organizations
     const fetchOrgs = async () => {
       try {
-        setLoading(true);
+        console.log('Fetching organizations...');
         const response = await fetch("http://localhost:8080/api/orgs");
-        if (!response.ok) throw new Error("Failed to fetch organizations");
+        console.log('Organizations response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch organizations: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log(`Fetched ${data.length} organizations`);
+        setDebugInfo(prev => ({ ...prev, orgsCount: data.length }));
         
-        console.log('Raw data from API:', data); // Debug log
         setOrgs(data);
-        
-        // Debug logs
-        console.log(`Total organizations loaded: ${data.length}`);
-        console.log('Organizations:', data.map(org => org.name));
-        
       } catch (err) {
         console.error("Error fetching organizations:", err);
-        setError("Unable to load organizations. Please try again later.");
+        setWarning("Unable to load organizations. Please try again later.");
+        setDebugInfo(prev => ({ ...prev, orgsError: err.message }));
       } finally {
         setLoading(false);
       }
@@ -142,58 +161,6 @@ function VolunteerDashboard() {
 
     fetchOrgs();
   }, [userId]);
-
-  // Calculate distances when userLocation and orgs are available
-  useEffect(() => {
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
-      const R = 3959; // Earth's radius in miles
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return (R * c).toFixed(1);
-    };
-
-    const geocodeAndCalculateDistances = async () => {
-      if (!userLocation || !orgs.length) return;
-
-      try {
-        const updatedDistances = {};
-        
-        await Promise.all(orgs.map(async (org) => {
-          try {
-            const encodedAddress = encodeURIComponent(org.address);
-            const response = await fetch(
-              `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encodedAddress}`
-            );
-            const data = await response.json();
-            
-            if (data.features && data.features[0]) {
-              const [lng, lat] = data.features[0].geometry.coordinates;
-              const distance = calculateDistance(
-                userLocation.lat,
-                userLocation.lng,
-                lat,
-                lng
-              );
-              updatedDistances[org._id] = distance;
-            }
-          } catch (error) {
-            console.error('Geocoding error for org:', org.name, error);
-          }
-        }));
-
-        setDistances(updatedDistances);
-      } catch (error) {
-        console.error('Error calculating distances:', error);
-      }
-    };
-
-    geocodeAndCalculateDistances();
-  }, [userLocation, orgs]);
 
   if (loading) {
     return (
@@ -203,80 +170,98 @@ function VolunteerDashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {viewMode === "list" ? (
-        <div className="p-4 max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Volunteer Opportunities
-            </h2>
+      <div className="p-4 max-w-4xl mx-auto">
+        {warning && (
+          <div className="p-4 mb-4 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded">
+            <strong>Warning:</strong> {warning}
+          </div>
+        )}
+
+        {process.env.NODE_ENV === 'development' && debugInfo && (
+          <div className="p-4 mb-4 border border-blue-200 bg-blue-50 text-sm font-mono">
+            <strong>Debug Info:</strong>
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Volunteer Dashboard
+          </h2>
+          <div className="space-x-4">
             <button
-              onClick={() => setViewMode("map")}
+              onClick={() => {
+                console.log('Switching display mode from', displayMode);
+                setDisplayMode(displayMode === "browse" ? "matches" : "browse");
+              }}
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
             >
-              Switch to Map View
+              {displayMode === "browse" ? "View Matched Tasks" : "Browse Organizations"}
             </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 text-sm text-gray-500 italic">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-700">
-                Private Organizations
-              </h3>
-              {orgs
-                .filter((o) => !o.name.toLowerCase().includes("fire"))
-                .map((org) => (
-                  <OrgCard
-                    key={org._id}
-                    org={org}
-                    userLocation={userLocation}
-                    distance={distances[org._id]}
-                  />
-                ))}
-            </div>
-
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-700">
-                Government Organizations
-              </h3>
-              {orgs
-                .filter((o) => o.name.toLowerCase().includes("fire"))
-                .map((org) => (
-                  <OrgCard
-                    key={org._id}
-                    org={org}
-                    userLocation={userLocation}
-                    distance={distances[org._id]}
-                  />
-                ))}
-            </div>
+            {displayMode === "browse" && (
+              <button
+                onClick={() => {
+                  console.log('Switching view mode from', viewMode);
+                  setViewMode(viewMode === "list" ? "map" : "list");
+                }}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                Switch to {viewMode === "list" ? "Map" : "List"} View
+              </button>
+            )}
           </div>
         </div>
-      ) : (
-        <MapView
-          orgs={orgs}
-          userLocation={userLocation}
-          setView={setViewMode}
-          view={viewMode}
-        />
-      )}
+
+        {displayMode === "browse" ? (
+          viewMode === "list" ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-700">
+                  Private Organizations
+                </h3>
+                {orgs
+                  .filter((o) => !o.name.toLowerCase().includes("fire"))
+                  .map((org) => (
+                    <OrgCard
+                      key={org._id}
+                      org={org}
+                      distance={distances[org._id]}
+                    />
+                  ))}
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-700">
+                  Government Organizations
+                </h3>
+                {orgs
+                  .filter((o) => o.name.toLowerCase().includes("fire"))
+                  .map((org) => (
+                    <OrgCard
+                      key={org._id}
+                      org={org}
+                      distance={distances[org._id]}
+                    />
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <MapView
+              orgs={orgs}
+              userLocation={userLocation}
+              setView={setViewMode}
+              view={viewMode}
+            />
+          )
+        ) : (
+          <div>
+            {console.log('Rendering MatchingDashboard with userId:', userId)}
+            <MatchingDashboard volunteerId={userId} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
