@@ -144,7 +144,7 @@ function MapView({ orgs, userLocation, setView, view }) {
 
   return (
     <div style={mapStyles.container}>
-      <button
+      {/* <button
         style={mapStyles.toggleButton}
         onMouseEnter={(e) => {
           e.target.style.backgroundColor = '#F57C00';
@@ -157,7 +157,7 @@ function MapView({ orgs, userLocation, setView, view }) {
         onClick={() => setView(view === 'map' ? 'list' : 'map')}
       >
         Switch to {view === 'map' ? 'List' : 'Map'} View
-      </button>
+      </button> */}
 
       <MapContainer 
         center={LACenter}
