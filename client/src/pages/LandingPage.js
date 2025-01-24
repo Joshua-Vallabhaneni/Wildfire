@@ -15,7 +15,6 @@ function LandingPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // LandingPage.js
   const handleSubmit = async (isVolunteer) => {
     try {
       const response = await fetch("http://localhost:8080/api/users", {
@@ -27,104 +26,214 @@ function LandingPage() {
           isVolunteer 
         })
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const data = await response.json();
-      
-      // Navigate to the correct initial step
-      if (isVolunteer) {
-        navigate(`/volunteer/${data._id}/background-check`);
-      } else {
-        navigate(`/requester/${data._id}/background-check`);
-      }
+      navigate(`/${isVolunteer ? 'volunteer' : 'requester'}/${data._id}/background-check`);
     } catch (error) {
       console.error("Error creating user:", error);
-      // Add some user feedback here
       alert("Error creating user. Please try again.");
     }
   };
 
-
-  // Inline styles for immediate effect
   const styles = {
     container: {
       minHeight: '100vh',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)',
       padding: '2rem',
-      backgroundColor: '#FAFAFA'
+      fontFamily: '"Inter", -apple-system, sans-serif',
+      color: '#1a1a1a',
+      position: 'relative',
+      overflow: 'hidden'
+    },
+    backgroundLayer1: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'radial-gradient(circle at 50% -20%, #FF4500, transparent)',
+      opacity: 0.3,
+      animation: 'pulse 2s infinite'
+    },
+    backgroundLayer2: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'radial-gradient(circle at 30% 100%, #FFA500, transparent)',
+      opacity: 0.2
+    },
+    logoContainer: {
+      width: '64px',
+      height: '64px',
+      background: 'linear-gradient(135deg, #FF4500, #FFA500)',
+      borderRadius: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 2rem',
+      boxShadow: '0 4px 20px rgba(255, 69, 0, 0.2)',
+      transition: 'transform 0.3s ease',
+      cursor: 'pointer',
+      ':hover': {
+        transform: 'scale(1.05)'
+      }
+    },
+    logo: {
+      width: '32px',
+      height: '32px',
+      color: '#FFFFFF'
     },
     card: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: '12px',
-      padding: '2rem',
-      boxShadow: '0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12)',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      borderRadius: '24px',
+      padding: '48px 40px',
+      backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255, 165, 0, 0.2)',
       width: '100%',
-      maxWidth: '480px'
+      maxWidth: '520px',
+      position: 'relative',
+      boxShadow: '0 16px 40px rgba(255, 69, 0, 0.1)'
     },
-    title: {
-      color: '#FF9800',
+    titleContainer: {
+      textAlign: 'center',
+      marginBottom: '40px'
+    },
+    mainTitle: {
+      background: 'linear-gradient(135deg, #FF4500, #FFA500)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       fontSize: '2.5rem',
-      fontWeight: 700,
-      marginBottom: '2rem',
-      textAlign: 'center'
+      fontWeight: 800,
+      marginBottom: '12px',
+      letterSpacing: '-0.02em',
+      lineHeight: 1.1
+    },
+    subtitle: {
+      color: '#666666',
+      fontSize: '1.1rem',
+      fontWeight: 400,
+      lineHeight: 1.5,
+      maxWidth: '400px',
+      margin: '0 auto'
     },
     inputGroup: {
-      marginBottom: '1rem'
+      marginBottom: '1.75rem'
     },
     label: {
       display: 'block',
-      marginBottom: '0.5rem',
-      color: '#212121',
-      fontSize: '0.875rem'
+      marginBottom: '0.65rem',
+      color: '#4a4a4a',
+      fontSize: '0.9rem',
+      fontWeight: 500,
+      letterSpacing: '0.5px'
     },
     input: {
       width: '100%',
-      padding: '0.75rem',
-      borderRadius: '8px',
-      border: '2px solid #EEEEEE',
-      fontSize: '1rem',
-      transition: 'all 0.2s ease-in-out',
-      marginBottom: '1rem'
+      padding: '14px 18px',
+      borderRadius: '12px',
+      border: '1px solid rgba(255, 165, 0, 0.2)',
+      fontSize: '0.95rem',
+      transition: 'all 0.2s ease',
+      backgroundColor: 'rgba(255, 255, 255, 0.7)',
+      color: '#1a1a1a',
+      fontFamily: '"Inter", sans-serif',
+      outline: 'none',
+      ':hover': {
+        borderColor: '#FFA500',
+      },
+      ':focus': {
+        borderColor: '#FF4500',
+        boxShadow: '0 0 0 3px rgba(255, 69, 0, 0.1)'
+      },
+      '::placeholder': {
+        color: '#999999'
+      }
     },
     buttonContainer: {
       display: 'flex',
       gap: '1rem',
-      marginTop: '2rem'
-    },
-    button: {
-      flex: 1,
-      padding: '1rem',
-      borderRadius: '8px',
-      border: 'none',
-      fontSize: '1rem',
-      fontWeight: 500,
-      cursor: 'pointer',
-      transition: 'all 0.2s ease-in-out'
+      marginTop: '2.5rem',
+      flexDirection: 'column'
     },
     primaryButton: {
-      backgroundColor: '#FF9800',
-      color: '#FFFFFF',
+      padding: '17px 24px',
+      borderRadius: '12px',
+      border: 'none',
+      fontSize: '1rem',
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      background: 'linear-gradient(135deg, #FF4500, #FFA500)',
+      color: '#fff',
+      boxShadow: '0 4px 20px rgba(255, 69, 0, 0.2)',
+      position: 'relative',
+      overflow: 'hidden',
+      ':hover': {
+        transform: 'translateY(-2px) scale(1.02)',
+        boxShadow: '0 6px 24px rgba(255, 69, 0, 0.3)'
+      },
+      ':active': {
+        transform: 'translateY(0) scale(0.98)',
+        boxShadow: '0 3px 12px rgba(255, 69, 0, 0.2)'
+      }
     },
     secondaryButton: {
-      backgroundColor: '#FFFFFF',
-      border: '2px solid #FF9800',
-      color: '#FF9800'
+      padding: '17px 24px',
+      borderRadius: '12px',
+      border: '2px solid rgba(255, 69, 0, 0.2)',
+      fontSize: '1rem',
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      color: '#FF4500',
+      ':hover': {
+        backgroundColor: 'rgba(255, 69, 0, 0.05)',
+        transform: 'translateY(-2px) scale(1.02)',
+        borderColor: '#FF4500',
+        boxShadow: '0 6px 24px rgba(255, 69, 0, 0.2)'
+      },
+      ':active': {
+        transform: 'translateY(0) scale(0.98)'
+      }
     }
   };
 
   return (
     <div style={styles.container}>
+      <div style={styles.backgroundLayer1} />
+      <div style={styles.backgroundLayer2} />
+      
       <div style={styles.card}>
-        <h1 style={styles.title}>Post-Wildfire Aid Web App</h1>
-        <h2 style={{...styles.title, fontSize: '1.5rem'}}>Sign In / Sign Up</h2>
-        
+        <div style={styles.logoContainer}>
+          <svg 
+            viewBox="0 0 24 24" 
+            style={styles.logo}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6.8 17.5h10.4a2 2 0 0 0 1.5-3.3l-5.2-6a2 2 0 0 0-3 0l-5.2 6a2 2 0 0 0 1.5 3.3" />
+            <path d="M12 15V9" />
+          </svg>
+        </div>
+
+        <div style={styles.titleContainer}>
+          <h1 style={styles.mainTitle}>Wildfire Aid Network</h1>
+          <p style={styles.subtitle}>Connect with relief efforts and recovery resources</p>
+        </div>
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Name:</label>
+          <label style={styles.label}>Full Name</label>
           <input
             style={styles.input}
             name="name"
@@ -134,7 +243,7 @@ function LandingPage() {
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Phone:</label>
+          <label style={styles.label}>Phone Number</label>
           <input
             style={styles.input}
             name="phone"
@@ -144,27 +253,29 @@ function LandingPage() {
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Email:</label>
+          <label style={styles.label}>Email Address</label>
           <input
             style={styles.input}
             name="email"
             value={formData.email}
             onChange={handleChange}
+            type="email"
           />
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Age:</label>
+          <label style={styles.label}>Age</label>
           <input
             style={styles.input}
             name="age"
             value={formData.age}
             onChange={handleChange}
+            type="number"
           />
         </div>
 
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Address (autofill):</label>
+          <label style={styles.label}>Location</label>
           <input
             style={styles.input}
             name="address"
@@ -176,13 +287,13 @@ function LandingPage() {
         <div style={styles.buttonContainer}>
           <button 
             onClick={() => handleSubmit(false)} 
-            style={{...styles.button, ...styles.primaryButton}}
+            style={styles.primaryButton}
           >
             Looking for help?
           </button>
           <button 
             onClick={() => handleSubmit(true)} 
-            style={{...styles.button, ...styles.secondaryButton}}
+            style={styles.secondaryButton}
           >
             Looking to help?
           </button>
