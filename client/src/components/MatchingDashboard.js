@@ -1,114 +1,159 @@
-// client/src/components/MatchingDashboard.js
-import React, { useEffect, useState } from 'react';
-import { MapPin, Clock, Shield, Tag } from 'lucide-react';
+import React, { useEffect, useState } from "react";
 
 /**
- * TaskCard Component
- * - Replaces <Card> with simple <div> containers
+ * Determine background/border colors for the card.
+ * (Each category uses a distinct pastel color.)
  */
-const TaskCard = ({ task, onClick }) => {
-  const urgencyColor = (urgency) => {
-    if (urgency >= 8) return 'text-red-600';
-    if (urgency >= 5) return 'text-yellow-600';
-    return 'text-green-600';
+function getCardStyle(type) {
+  let backgroundColor = "#f9f9f9";
+  let borderColor = "#ccc";
+
+  if (type === "private") {
+    backgroundColor = "#FFF7E6"; // Light orange
+    borderColor = "#FFD8A8";
+  } else if (type === "requester") {
+    backgroundColor = "#EBF8FF"; // Light blue
+    borderColor = "#BEE3F8";
+  } else if (type === "government") {
+    backgroundColor = "#F0FFF4"; // Light green
+    borderColor = "#C6F6D5";
+  }
+
+  return {
+    backgroundColor,
+    border: `2px solid ${borderColor}`,
+    borderRadius: "10px",
+    padding: "1rem",
+    marginBottom: "1rem",
+    cursor: "pointer",
+    transition: "box-shadow 0.2s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+  };
+}
+
+/**
+ * A single card with dropdown details. Color-coded per type (private/requester/government).
+ */
+const MatchCard = ({ item, cardType }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  // Identify if this match is from an individual or an org:
+  const isIndividual = !!item.requester;
+  const name = isIndividual
+    ? item.requester.name
+    : (item.organization?.name || "Unknown Organization");
+  const address = isIndividual
+    ? "(Individual Requester)"
+    : (item.organization?.address || "No address provided");
+  const link = item.organization?.link;
+
+  // For the arrow symbol:
+  const arrowSymbol = expanded ? "▼" : "▶";
+
+  // A bit of urgency color text for the displayed urgency:
+  let urgencyColor = "#333";
+  if (item.urgency >= 8) {
+    urgencyColor = "red";
+  } else if (item.urgency >= 5) {
+    urgencyColor = "orange";
+  } else {
+    urgencyColor = "green";
+  }
+
+  // Inline styles
+  const cardBaseStyle = getCardStyle(cardType);
+
+  const titleStyle = {
+    fontSize: "1.1rem",
+    fontWeight: "600",
+    marginBottom: "0.25rem",
+  };
+
+  const addressStyle = {
+    fontSize: "0.9rem",
+    color: "#666",
+    marginBottom: "0.5rem",
+  };
+
+  const arrowStyle = {
+    marginLeft: "0.5rem",
+    fontWeight: "bold",
+    fontSize: "1.25rem",
+    color: "#555",
+  };
+
+  const expandedSectionStyle = {
+    marginTop: "0.75rem",
+    fontSize: "0.9rem",
+    color: "#333",
+    lineHeight: "1.4",
   };
 
   return (
     <div
-      className="mb-4 p-4 border rounded shadow hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
+      style={cardBaseStyle}
+      onClick={() => setExpanded(!expanded)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
+      }}
     >
-      {/* This section replaces CardHeader + CardTitle */}
-      <div className="pb-2">
-        <div className="text-lg font-semibold flex justify-between items-start">
-          <span>{task.title}</span>
-          <span className={`text-sm ${urgencyColor(task.urgency)}`}>
-            Urgency: {task.urgency}/10
-          </span>
+      {/* Top row: name + arrow */}
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>
+          <div style={titleStyle}>{name}</div>
+          <div style={addressStyle}>{address}</div>
         </div>
+        <div style={arrowStyle}>{arrowSymbol}</div>
       </div>
 
-      {/* This section replaces CardContent */}
-      <div>
-        <div className="space-y-2">
-          {task.organization && (
-            <div className="flex items-center text-sm text-gray-600">
-              <MapPin className="h-4 w-4 mr-2" />
-              {task.organization.name} - {task.organization.address}
-            </div>
-          )}
-
-          <div className="flex items-center text-sm text-gray-600">
-            <Tag className="h-4 w-4 mr-2" />
-            {task.category}
+      {/* Expanded content */}
+      {expanded && (
+        <div style={expandedSectionStyle}>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <strong>Task Title:</strong> {item.title}
           </div>
-
-          {task.requesterAvailability && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Clock className="h-4 w-4 mr-2" />
-              {Object.entries(task.requesterAvailability)
-                .map(([day, slots]) => `${day}: ${slots.join(', ')}`)
-                .join(' | ')}
-            </div>
-          )}
-
-          {task.specialtyRequired && (
-            <div className="flex items-center text-sm text-orange-600">
-              <Shield className="h-4 w-4 mr-2" />
-              Requires Special Skills
-            </div>
-          )}
-
-          <div className="text-sm text-gray-600 pt-2 border-t">
-            Match Score: {(task.matchScore * 100).toFixed(1)}%
+          <div style={{ marginBottom: "0.5rem" }}>
+            <strong>Urgency:</strong>{" "}
+            <span style={{ color: urgencyColor }}>{item.urgency}/10</span>
           </div>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <strong>Category:</strong> {item.category || "N/A"}
+          </div>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <strong>Specialty Required:</strong>{" "}
+            {item.specialtyRequired ? "Yes" : "No"}
+          </div>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <strong>Match Score:</strong>{" "}
+            {item.matchScore
+              ? `${(item.matchScore * 100).toFixed(1)}%`
+              : "N/A"}
+          </div>
+          {/* If there's a link, show it */}
+          {link && (
+            <div style={{ marginTop: "0.75rem" }}>
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: "#0056b3", textDecoration: "none", fontWeight: "500" }}
+              >
+                Visit Website &rarr;
+              </a>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 /**
- * MatchesSection Component
- * - Replaces <Alert> with a simple <div> block for "No matches found".
- */
-const MatchesSection = ({ title, tasks, emptyMessage }) => {
-  if (!tasks || tasks.length === 0) {
-    return (
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4">{title}</h3>
-        {/* Replaced Alert with a simpler alert-like div */}
-        <div className="border border-orange-200 bg-orange-50 p-4 rounded">
-          <strong className="block mb-1">No matches found</strong>
-          <p className="text-sm text-gray-600">{emptyMessage}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-8">
-      <h3 className="text-xl font-bold mb-4">{title}</h3>
-      <div className="space-y-4">
-        {tasks.map((task, index) => (
-          <TaskCard
-            key={index}
-            task={task}
-            onClick={() => {
-              if (task.organization?.link) {
-                window.open(task.organization.link, '_blank');
-              }
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-/**
- * MatchingDashboard Component
- * - Uses the above two components to show matches for a volunteer.
+ * The main matching dashboard: fetches tasks & displays them in 3 columns (PRIVATE - left, REQUESTERS - center, GOVERNMENT - right).
  */
 const MatchingDashboard = ({ volunteerId }) => {
   const [matches, setMatches] = useState(null);
@@ -120,59 +165,123 @@ const MatchingDashboard = ({ volunteerId }) => {
       try {
         const response = await fetch(`http://localhost:8080/api/matching/${volunteerId}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch matches');
+          throw new Error("Failed to fetch matches");
         }
         const data = await response.json();
         setMatches(data);
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching matches:', err);
+        console.error("Error fetching matches:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchMatches();
   }, [volunteerId]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      <div style={{ textAlign: "center", marginTop: "3rem" }}>
+        <div style={{ fontSize: "1.25rem", color: "#666" }}>Loading...</div>
       </div>
     );
   }
 
   if (error) {
-    // Basic error message instead of <Alert>
     return (
-      <div className="p-4 max-w-lg mx-auto mt-8 border border-red-300 bg-red-50 text-red-800">
+      <div
+        style={{
+          maxWidth: "600px",
+          margin: "2rem auto",
+          padding: "1rem",
+          border: "1px solid #f5c2c7",
+          backgroundColor: "#f8d7da",
+          color: "#842029",
+          borderRadius: "8px",
+        }}
+      >
         <strong>Error:</strong> {error}
       </div>
     );
   }
 
+  // Some basic style objects for the 3-column layout
+  const containerStyle = {
+    width: "95%",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    marginTop: "2rem",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "1rem",
+  };
+
+  const columnStyle = {
+    width: "33%",
+  };
+
+  const headingStyle = {
+    fontSize: "2rem",
+    fontWeight: "700",
+    marginBottom: "1rem",
+    textAlign: "left",
+    color: "#222",
+  };
+
+  const subheadingStyle = {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+    marginBottom: "1rem",
+    color: "#444",
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">Your Matched Opportunities</h1>
+    <div style={{ padding: "1rem" }}>
+      <h1 style={headingStyle}>Your Matched Opportunities</h1>
 
-      <MatchesSection
-        title="Top Matches from Individual Requesters"
-        tasks={matches?.requestorTasks || []}
-        emptyMessage="No matching tasks from individual requesters found."
-      />
+      <div style={containerStyle}>
+        {/* LEFT COLUMN: Private Orgs */}
+        <div style={columnStyle}>
+          <div style={subheadingStyle}>Private Organizations</div>
+          {(!matches?.privateOrgs || matches.privateOrgs.length === 0) ? (
+            <p style={{ fontSize: "0.9rem", color: "#777" }}>
+              No matching private organizations found.
+            </p>
+          ) : (
+            matches.privateOrgs.map((item, index) => (
+              <MatchCard key={index} item={item} cardType="private" />
+            ))
+          )}
+        </div>
 
-      <MatchesSection
-        title="Matches from Private Organizations"
-        tasks={matches?.privateOrgs || []}
-        emptyMessage="No matching tasks from private organizations found."
-      />
+        {/* MIDDLE COLUMN: Individual Requesters */}
+        <div style={columnStyle}>
+          <div style={subheadingStyle}>Individual Requesters</div>
+          {(!matches?.requestorTasks || matches.requestorTasks.length === 0) ? (
+            <p style={{ fontSize: "0.9rem", color: "#777" }}>
+              No matching individual requesters found.
+            </p>
+          ) : (
+            matches.requestorTasks.map((item, index) => (
+              <MatchCard key={index} item={item} cardType="requester" />
+            ))
+          )}
+        </div>
 
-      <MatchesSection
-        title="Matches from Government Organizations"
-        tasks={matches?.governmentOrgs || []}
-        emptyMessage="No matching tasks from government organizations found."
-      />
+        {/* RIGHT COLUMN: Government Orgs */}
+        <div style={columnStyle}>
+          <div style={subheadingStyle}>Government Organizations</div>
+          {(!matches?.governmentOrgs || matches.governmentOrgs.length === 0) ? (
+            <p style={{ fontSize: "0.9rem", color: "#777" }}>
+              No matching government organizations found.
+            </p>
+          ) : (
+            matches.governmentOrgs.map((item, index) => (
+              <MatchCard key={index} item={item} cardType="government" />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };
