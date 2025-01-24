@@ -1,13 +1,9 @@
 // client/src/pages/VolunteerFlow/VolunteerDashboard.js
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import MapView from "../../components/MapView";
 import MatchingDashboard from "../../components/MatchingDashboard";
 
-/**
- * Simple card to show org details in a list (when not in map view).
- */
 const OrgCard = ({ org, distance }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -92,54 +88,72 @@ const OrgCard = ({ org, distance }) => {
 function VolunteerDashboard() {
   const { userId } = useParams();
   const [viewMode, setViewMode] = useState("list");
-  const [displayMode, setDisplayMode] = useState("browse"); // 'browse' or 'matches'
+  const [displayMode, setDisplayMode] = useState("browse");
   const [orgs, setOrgs] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
-
-  // Instead of stopping the entire UI, store a small message:
   const [warning, setWarning] = useState(null);
-
   const [distances, setDistances] = useState({});
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
-    // 1) Attempt geolocation
+    console.log('VolunteerDashboard mounted with userId:', userId);
+    setDebugInfo(prev => ({ ...prev, userId }));
+
+    if (!userId) {
+      console.error('No userId available in params');
+      setWarning('User ID not found. Please try logging in again.');
+      setLoading(false);
+      return;
+    }
+
+    // Get location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserLocation({
+          const location = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-          });
+          };
+          console.log('Got user location:', location);
+          setUserLocation(location);
+          setDebugInfo(prev => ({ ...prev, location }));
         },
         (error) => {
           console.error("Error getting location:", error);
-          // Instead of blocking the UI, just show a warning & set fallback:
           setWarning("Unable to get your location. Some features may be limited.");
-          setUserLocation({
-            lat: 34.0522, // Fallback: Los Angeles coords
-            lng: -118.2437,
-          });
+          const defaultLocation = { lat: 34.0522, lng: -118.2437 };
+          setUserLocation(defaultLocation);
+          setDebugInfo(prev => ({ ...prev, locationError: error.message, defaultLocation }));
         }
       );
     } else {
+      const defaultLocation = { lat: 34.0522, lng: -118.2437 };
       setWarning("Geolocation is not supported by your browser.");
-      // Also use fallback:
-      setUserLocation({ lat: 34.0522, lng: -118.2437 });
+      setUserLocation(defaultLocation);
+      setDebugInfo(prev => ({ ...prev, geolocationSupport: false, defaultLocation }));
     }
 
-    // 2) Fetch organizations from the server
+    // Fetch organizations
     const fetchOrgs = async () => {
       try {
+        console.log('Fetching organizations...');
         const response = await fetch("http://localhost:8080/api/orgs");
+        console.log('Organizations response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error("Failed to fetch organizations");
+          throw new Error(`Failed to fetch organizations: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log(`Fetched ${data.length} organizations`);
+        setDebugInfo(prev => ({ ...prev, orgsCount: data.length }));
+        
         setOrgs(data);
       } catch (err) {
         console.error("Error fetching organizations:", err);
         setWarning("Unable to load organizations. Please try again later.");
+        setDebugInfo(prev => ({ ...prev, orgsError: err.message }));
       } finally {
         setLoading(false);
       }
@@ -147,11 +161,6 @@ function VolunteerDashboard() {
 
     fetchOrgs();
   }, [userId]);
-
-  // Removed any "if (warning) return" because we want the UI to show anyway
-
-  // 3) Once userLocation & orgs are available, distances are calculated in MapView directly.
-  //    Or you can do it here in a second useEffect if you prefer.
 
   if (loading) {
     return (
@@ -164,25 +173,39 @@ function VolunteerDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-4 max-w-4xl mx-auto">
-        {/* If there's a warning, show it up top but don't block the rest */}
         {warning && (
           <div className="p-4 mb-4 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded">
             <strong>Warning:</strong> {warning}
           </div>
         )}
 
+        {process.env.NODE_ENV === 'development' && debugInfo && (
+          <div className="p-4 mb-4 border border-blue-200 bg-blue-50 text-sm font-mono">
+            <strong>Debug Info:</strong>
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Volunteer Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Volunteer Dashboard
+          </h2>
           <div className="space-x-4">
             <button
-              onClick={() => setDisplayMode(displayMode === "browse" ? "matches" : "browse")}
+              onClick={() => {
+                console.log('Switching display mode from', displayMode);
+                setDisplayMode(displayMode === "browse" ? "matches" : "browse");
+              }}
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
             >
               {displayMode === "browse" ? "View Matched Tasks" : "Browse Organizations"}
             </button>
             {displayMode === "browse" && (
               <button
-                onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                onClick={() => {
+                  console.log('Switching view mode from', viewMode);
+                  setViewMode(viewMode === "list" ? "map" : "list");
+                }}
                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
               >
                 Switch to {viewMode === "list" ? "Map" : "List"} View
@@ -192,7 +215,6 @@ function VolunteerDashboard() {
         </div>
 
         {displayMode === "browse" ? (
-          // BROWSE MODE: Show orgs in "list" or "map" view
           viewMode === "list" ? (
             <div className="space-y-6">
               <div>
@@ -226,7 +248,6 @@ function VolunteerDashboard() {
               </div>
             </div>
           ) : (
-            // Map View
             <MapView
               orgs={orgs}
               userLocation={userLocation}
@@ -235,8 +256,10 @@ function VolunteerDashboard() {
             />
           )
         ) : (
-          // MATCHES MODE: show the user's matched tasks (Deep Seek code is in /api/matching)
-          <MatchingDashboard volunteerId={userId} />
+          <div>
+            {console.log('Rendering MatchingDashboard with userId:', userId)}
+            <MatchingDashboard volunteerId={userId} />
+          </div>
         )}
       </div>
     </div>
