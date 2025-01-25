@@ -3,7 +3,7 @@ const axios = require('axios');
 
 class MatchingService {
   constructor() {
-    this.API_URL = "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-coder-1.3b-instruct";
+    this.API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2";
     this.API_KEY = "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";
   }
 

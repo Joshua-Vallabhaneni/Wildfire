@@ -1,8 +1,9 @@
+// client/src/components/MatchingDashboard.js
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Determine background/border colors for the card.
- * (Each category uses a distinct pastel color.)
  */
 function getCardStyle(type) {
   let backgroundColor = "#f9f9f9";
@@ -31,11 +32,9 @@ function getCardStyle(type) {
   };
 }
 
-/**
- * A single card with dropdown details. Color-coded per type (private/requester/government).
- */
-const MatchCard = ({ item, cardType }) => {
+const MatchCard = ({ item, cardType, volunteerId }) => {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   // Identify if this match is from an individual or an org:
   const isIndividual = !!item.requester;
@@ -60,33 +59,53 @@ const MatchCard = ({ item, cardType }) => {
     urgencyColor = "green";
   }
 
+  const handleMessageClick = (e) => {
+  e.stopPropagation(); // Prevent card expansion toggle
+  navigate('/messages', { 
+    state: { 
+      userId: volunteerId,
+      recipientId: item.requester.id,
+      recipientName: item.requester.name,
+      isNewChat: true 
+    }
+  });
+};
+
   // Inline styles
   const cardBaseStyle = getCardStyle(cardType);
-
   const titleStyle = {
     fontSize: "1.1rem",
     fontWeight: "600",
     marginBottom: "0.25rem",
   };
-
   const addressStyle = {
     fontSize: "0.9rem",
     color: "#666",
     marginBottom: "0.5rem",
   };
-
   const arrowStyle = {
     marginLeft: "0.5rem",
     fontWeight: "bold",
     fontSize: "1.25rem",
     color: "#555",
   };
-
   const expandedSectionStyle = {
     marginTop: "0.75rem",
     fontSize: "0.9rem",
     color: "#333",
     lineHeight: "1.4",
+  };
+  const messageButtonStyle = {
+    backgroundColor: "#0095F6",
+    color: "white",
+    padding: "0.5rem 1rem",
+    borderRadius: "20px",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    fontSize: "0.9rem",
   };
 
   return (
@@ -132,6 +151,18 @@ const MatchCard = ({ item, cardType }) => {
               ? `${(item.matchScore * 100).toFixed(1)}%`
               : "N/A"}
           </div>
+
+          {isIndividual && (
+            <div style={{ marginBottom: "0.5rem" }}>
+              <button
+                onClick={handleMessageClick}
+                style={messageButtonStyle}
+              >
+                <span>💬</span> Message {item.requester.name}
+              </button>
+            </div>
+          )}
+
           {/* If there's a link, show it */}
           {link && (
             <div style={{ marginTop: "0.75rem" }}>
@@ -152,9 +183,6 @@ const MatchCard = ({ item, cardType }) => {
   );
 };
 
-/**
- * The main matching dashboard: fetches tasks & displays them in 3 columns (PRIVATE - left, REQUESTERS - center, GOVERNMENT - right).
- */
 const MatchingDashboard = ({ volunteerId }) => {
   const [matches, setMatches] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -205,7 +233,6 @@ const MatchingDashboard = ({ volunteerId }) => {
     );
   }
 
-  // Some basic style objects for the 3-column layout
   const containerStyle = {
     width: "95%",
     maxWidth: "1200px",
@@ -249,7 +276,12 @@ const MatchingDashboard = ({ volunteerId }) => {
             </p>
           ) : (
             matches.privateOrgs.map((item, index) => (
-              <MatchCard key={index} item={item} cardType="private" />
+              <MatchCard 
+                key={index} 
+                item={item} 
+                cardType="private" 
+                volunteerId={volunteerId}
+              />
             ))
           )}
         </div>
@@ -263,7 +295,12 @@ const MatchingDashboard = ({ volunteerId }) => {
             </p>
           ) : (
             matches.requestorTasks.map((item, index) => (
-              <MatchCard key={index} item={item} cardType="requester" />
+              <MatchCard 
+                key={index} 
+                item={item} 
+                cardType="requester" 
+                volunteerId={volunteerId}
+              />
             ))
           )}
         </div>
@@ -277,7 +314,12 @@ const MatchingDashboard = ({ volunteerId }) => {
             </p>
           ) : (
             matches.governmentOrgs.map((item, index) => (
-              <MatchCard key={index} item={item} cardType="government" />
+              <MatchCard 
+                key={index} 
+                item={item} 
+                cardType="government" 
+                volunteerId={volunteerId}
+              />
             ))
           )}
         </div>

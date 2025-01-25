@@ -1,5 +1,4 @@
 // client/src/pages/VolunteerFlow/VolunteerDashboard.js
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MatchingDashboard from "../../components/MatchingDashboard";
@@ -21,7 +20,7 @@ function VolunteerDashboard() {
       return;
     }
 
-    // Attempt to get user’s geolocation
+    // Attempt to get user's geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -31,7 +30,7 @@ function VolunteerDashboard() {
           });
         },
         () => {
-          setWarning("Couldn’t get location. Using default Los Angeles coords.");
+          setWarning("Couldn't get location. Using default Los Angeles coords.");
           setUserLocation({ lat: 34.0522, lng: -118.2437 });
         }
       );
@@ -83,6 +82,7 @@ function VolunteerDashboard() {
           <li>
             <Link
               to="/messages"
+              state={{ userId: userId }}
               className="text-blue-600 hover:underline"
             >
               Direct Messages
@@ -112,7 +112,7 @@ function VolunteerDashboard() {
           <h2 className="text-2xl font-bold text-gray-800">Volunteer Dashboard</h2>
           <button
             onClick={() => setCurrentView(currentView === "tasks" ? "map" : "tasks")}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
           >
             Switch to {currentView === "tasks" ? "Map" : "Tasks"} View
           </button>
