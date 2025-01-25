@@ -1,169 +1,200 @@
 // server/services/matchingService.js
-const axios = require('axios');
 
+const axios = require("axios");
+
+/**
+ * This matching service uses the sentence-similarity pipeline at Hugging Face
+ * plus a fallback word overlap if HF fails. It computes overlap via
+ * (# of matching requestor slots) / (requestor's total slots).
+ */
 class MatchingService {
   constructor() {
-    this.API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2";
-    this.API_KEY = "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";
+    // Use the "sentence-similarity" pipeline for all-MiniLM-L6-v2
+    this.API_URL =
+      "https://api-inference.huggingface.co/pipeline/sentence-similarity/sentence-transformers/all-MiniLM-L6-v2";
+
+    // Replace with your working HF API key
+    this.API_KEY = "hf_YOUR_HF_API_KEY";
   }
 
-  async calculateTaskSimilarity(task1, task2) {
-    try {
-      const prompt = `Given two tasks, assess their similarity on a scale from 0 to 1 where 1 is identical and 0 is completely different.
-      Task 1: ${task1}
-      Task 2: ${task2}
-      Consider skills required, category of work, and overall purpose. Only respond with a number between 0 and 1.`;
+  /**
+   * 1) Attempt Hugging Face sentence-similarity pipeline
+   * 2) If error => fallback to word overlap in [0.3..0.8]
+   */
+  async calculateTaskSimilarity(textA, textB) {
+    console.log(
+      `\n[calculateTaskSimilarity] Attempting sentence-similarity:\n  Volunteer Skill: "${textA}"\n  Requestor Task: "${textB}"\n`
+    );
 
+    try {
       const response = await axios.post(
         this.API_URL,
-        { inputs: prompt },
+        {
+          inputs: {
+            source_sentence: textA,
+            sentences: [textB],
+          },
+        },
         {
           headers: {
-            'Authorization': `Bearer ${this.API_KEY}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${this.API_KEY}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      const similarity = parseFloat(response.data[0].generated_text.trim());
-      return isNaN(similarity) ? 0 : similarity;
+      // Should get [similarity]
+      const similarity = response.data[0];
+      console.log(`[calculateTaskSimilarity] HF similarity => ${similarity.toFixed(3)}`);
+      return similarity;
     } catch (error) {
-      console.error('Error calculating task similarity:', error);
-      return 0;
+      console.error(
+        "[calculateTaskSimilarity] HF error => fallback word overlap.\n",
+        error?.response?.data || error
+      );
+      const fallback = this.wordOverlapSimilarity(textA, textB);
+      console.log(`[calculateTaskSimilarity] Fallback => ${fallback.toFixed(3)}`);
+      return fallback;
     }
   }
 
-  calculateMatchScore(similarity, task, volunteer) {
-    const weights = {
-      similarity: 0.5,
-      urgency: 0.3,
-      availability: 0.2
-    };
+  /**
+   * Word overlap fallback: ratio in [0..1], scaled to [0.3..0.8].
+   */
+  wordOverlapSimilarity(a = "", b = "") {
+    const setA = new Set(a.toLowerCase().split(/\s+/));
+    const setB = new Set(b.toLowerCase().split(/\s+/));
+    const common = [...setA].filter((w) => setB.has(w)).length;
+    const total = new Set([...setA, ...setB]).size || 1;
 
-    // Calculate similarity score
-    const similarityScore = similarity;
+    const overlapRatio = common / total; // [0..1]
+    // scale to [0.3..0.8]
+    return 0.3 + overlapRatio * 0.5;
+  }
 
-    // Calculate urgency score (normalized to 0-1)
-    const urgencyScore = task.urgency / 10;
-
-    // Calculate availability match
-    let availabilityScore = 0;
-    if (volunteer.availability && task.requesterAvailability) {
-      const commonDays = Object.keys(volunteer.availability).filter(day => 
-        task.requesterAvailability[day]?.length > 0
-      );
-
-      const totalPossibleDays = 7; // Maximum possible matching days
-      availabilityScore = commonDays.length / totalPossibleDays;
+  /**
+   * Weighted final:
+   *  60% similarity
+   *  25% urgency
+   *  15% availability
+   * If specialty is required but volunteer lacks => half final. 
+   * Min final => 0.15 so we never get 0.
+   */
+  calculateMatchScore(similarity, urgency, availability, specialtyRequired, volunteerHasSpecialty) {
+    // partial penalty if lacks specialty
+    if (specialtyRequired && !volunteerHasSpecialty) {
+      similarity *= 0.5;
     }
 
-    // Special handling for specialty requirements
-    if (task.specialtyRequired) {
-      // Check if volunteer has any specialty skills mentioned in their tasksWilling
-      const hasSpecialty = volunteer.tasksWilling.some(skill => 
-        skill.title.toLowerCase().includes('specialist') ||
-        skill.title.toLowerCase().includes('certified') ||
-        skill.title.toLowerCase().includes('professional')
-      );
-      
-      if (!hasSpecialty) {
-        return 0; // Immediately disqualify if specialty required but not present
+    let score =
+      similarity * 0.6 +
+      urgency * 0.25 +
+      availability * 0.15;
+
+    if (score < 0.15) score = 0.15;
+    return score;
+  }
+
+  /**
+   * Overlap = (# of matching day/time slots) / (requestor's total slots).
+   */
+  computeAvailabilityOverlap(volunteerAvail = {}, requestorAvail = {}) {
+    let requestorSlotCount = 0;
+    let matchCount = 0;
+
+    // total requestor slots
+    for (const day of Object.keys(requestorAvail)) {
+      const reqSlots = requestorAvail[day] || [];
+      requestorSlotCount += reqSlots.length;
+    }
+
+    if (requestorSlotCount === 0) return 0;
+
+    // how many are also in volunteer's schedule
+    for (const day of Object.keys(requestorAvail)) {
+      const reqSlots = requestorAvail[day] || [];
+      const volSlots = volunteerAvail[day] || [];
+
+      for (const slot of reqSlots) {
+        if (volSlots.includes(slot)) {
+          matchCount++;
+        }
       }
     }
 
-    // Calculate final weighted score
-    const finalScore = (
-      similarityScore * weights.similarity +
-      urgencyScore * weights.urgency +
-      availabilityScore * weights.availability
-    );
-
-    return finalScore;
+    return matchCount / requestorSlotCount;
   }
 
-  async findMatches(volunteer, allTasks, organizations) {
-    const matches = {
-      requestorTasks: [],
-      privateOrgs: [],
-      governmentOrgs: []
-    };
+  /**
+   * findMatches() => For each requestor => each requested task => best among volunteer skills => push if > 0
+   */
+  async findMatches(volunteer, requestors) {
+    console.log("[findMatches] Starting sentence-similarity matching.\n");
 
-    // Helper function to process tasks and calculate matches
-    const processTaskMatches = async (tasks, source, maxMatches) => {
-      const matchPromises = tasks.map(async (task) => {
-        let highestScore = 0;
-        
-        for (const volunteerSkill of volunteer.tasksWilling) {
-          const similarity = await this.calculateTaskSimilarity(
-            volunteerSkill.title,
-            task.title
+    // check if volunteer has "certified|professional|specialist"
+    const volunteerHasSpecialty = volunteer.tasksWilling.some((skill) =>
+      /certified|professional|specialist/i.test(skill.title)
+    );
+
+    const allMatches = [];
+    let comparisonCount = 0;
+
+    for (const req of requestors) {
+      const reqAvail = req.availability || {};
+
+      for (const reqTask of req.tasksRequested || []) {
+        const urgencyVal = (reqTask.urgency || 0) / 10;
+        const overlapVal = this.computeAvailabilityOverlap(
+          volunteer.availability,
+          reqAvail
+        );
+
+        let bestScore = 0;
+
+        for (const volSkill of volunteer.tasksWilling || []) {
+          comparisonCount++;
+
+          // 1) hugging face or fallback
+          // eslint-disable-next-line no-await-in-loop
+          const similarity = await this.calculateTaskSimilarity(volSkill.title, reqTask.title);
+
+          // 2) Weighted final
+          const finalScore = this.calculateMatchScore(
+            similarity,
+            urgencyVal,
+            overlapVal,
+            reqTask.specialtyRequired,
+            volunteerHasSpecialty
           );
 
-          const score = this.calculateMatchScore(similarity, task, volunteer);
+          console.log(
+            `[compare #${comparisonCount}] VolunteerSkill="${volSkill.title}"  ReqTask="${reqTask.title}"\n` +
+            `similarity=${similarity.toFixed(3)}  urgency=${urgencyVal.toFixed(2)}  overlap=${overlapVal.toFixed(2)} => finalScore=${finalScore.toFixed(3)}\n`
+          );
 
-          if (score > highestScore) {
-            highestScore = score;
+          if (finalScore > bestScore) {
+            bestScore = finalScore;
           }
         }
 
-        return {
-          ...task,
-          source,
-          matchScore: highestScore
-        };
-      });
+        // push final best for that requestor task
+        allMatches.push({
+          requestorId: req._id,
+          requestorName: req.name,
+          address: req.address || "No address provided",
+          taskTitle: reqTask.title,
+          urgency: reqTask.urgency,
+          specialtyRequired: reqTask.specialtyRequired,
+          finalScore: bestScore,
+        });
+      }
+    }
 
-      const results = await Promise.all(matchPromises);
-      return results
-        .filter(match => match.matchScore > 0)
-        .sort((a, b) => b.matchScore - a.matchScore)
-        .slice(0, maxMatches);
-    };
+    console.log(`[findMatches] Completed. comparisons=${comparisonCount} => returning ${allMatches.length} tasks.\n`);
 
-    // Process requestor tasks
-    const requestorTasks = allTasks.filter(task => 
-      !task.source.isVolunteer && task.tasksRequested
-    ).flatMap(req => 
-      req.tasksRequested.map(task => ({
-        ...task,
-        requesterAvailability: req.availability
-      }))
-    );
-    matches.requestorTasks = await processTaskMatches(requestorTasks, 'requestor', 3);
-
-    // Process organization tasks
-    const privateOrgs = organizations.filter(org => !org.name.toLowerCase().includes('fire'));
-    const governmentOrgs = organizations.filter(org => org.name.toLowerCase().includes('fire'));
-
-    matches.privateOrgs = await processTaskMatches(
-      privateOrgs.flatMap(org => org.tasksRequested.map(task => ({
-        ...task,
-        requesterAvailability: org.availability,
-        organization: {
-          name: org.name,
-          address: org.address,
-          link: org.link
-        }
-      }))),
-      'private',
-      3
-    );
-
-    matches.governmentOrgs = await processTaskMatches(
-      governmentOrgs.flatMap(org => org.tasksRequested.map(task => ({
-        ...task,
-        requesterAvailability: org.availability,
-        organization: {
-          name: org.name,
-          address: org.address,
-          link: org.link
-        }
-      }))),
-      'government',
-      3
-    );
-
-    return matches;
+    // sort descending
+    allMatches.sort((a, b) => b.finalScore - a.finalScore);
+    return allMatches;
   }
 }
 

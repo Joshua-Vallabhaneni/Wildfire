@@ -1,156 +1,117 @@
 // server/routes/matchingRoutes.js
+
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
-const Organization = require("../models/Organization");
-
-// 1) IMPORTANT: bring in the matchingService
 const matchingService = require("../services/matchingService");
 
 /**
- * This route finds tasks requested by individuals and organizations,
- * computes a true match score by calling Hugging Face for each volunteer skill,
- * then returns the top matches for a given volunteer ID.
+ * GET /api/matching/:volunteerId
+ *  1) load volunteer (isVolunteer: true)
+ *  2) load all requestors (isVolunteer: false)
+ *  3) pass to matchingService => array of matched tasks
+ *  4) group them into privateOrgs, requestorTasks, governmentOrgs
+ *     by name-based logic, and include .address so the front-end can display it
  */
 router.get("/:volunteerId", async (req, res) => {
   try {
-    console.log("Matching request received for volunteer:", req.params.volunteerId);
+    const { volunteerId } = req.params;
 
-    // 2) Load the volunteer from MongoDB
-    const volunteer = await User.findById(req.params.volunteerId);
+    // 1) find volunteer
+    const volunteer = await User.findById(volunteerId);
     if (!volunteer) {
-      console.log("Volunteer not found in database");
-      return res.status(404).json({
-        error: "Volunteer not found",
-        providedId: req.params.volunteerId,
-      });
+      return res.status(404).json({ error: "Volunteer not found" });
     }
     if (!volunteer.isVolunteer) {
-      console.log("User found but not a volunteer");
-      return res.status(400).json({
-        error: "User is not a volunteer",
-        userId: req.params.volunteerId,
+      return res.status(400).json({ error: "User is not a volunteer" });
+    }
+
+    // 2) find requestors
+    const requestors = await User.find({ isVolunteer: false });
+    if (!requestors.length) {
+      return res.json({
+        privateOrgs: [],
+        requestorTasks: [],
+        governmentOrgs: [],
       });
     }
 
-    // 3) Fetch all users (who are requesters) + all orgs, in parallel
-    const [allUsers, allOrgs] = await Promise.all([
-      User.find({ isVolunteer: false }),
-      Organization.find({}),
-    ]);
-
-    console.log(`Found ${allUsers.length} requestors and ${allOrgs.length} organizations`);
-
-    // 4) Build arrays of "tasks" from requesters and orgs
-    //    Each item includes an extra 'requester' or 'organization' field
-    const requestorTasks = allUsers.flatMap((user) =>
-      user.tasksRequested.map((task) => ({
-        ...task.toObject(),
-        requester: {
-          id: user._id,
-          name: user.name,
-        },
-        requesterAvailability: user.availability,
-      }))
-    );
-
-    const orgTasks = allOrgs.flatMap((org) =>
-      org.tasksRequested.map((task) => ({
-        ...task.toObject(),
-        organization: {
-          id: org._id,
-          name: org.name,
-          address: org.address,
-          link: org.link,
-        },
-        requesterAvailability: org.availability,
-      }))
-    );
-
-    // Split org tasks: "private" vs. "government"
-    const privateOrgTasks = orgTasks.filter(
-      (t) => !t.organization.name.toLowerCase().includes("fire")
-    );
-    const governmentOrgTasks = orgTasks.filter((t) =>
-      t.organization.name.toLowerCase().includes("fire")
-    );
-
-    // 5) For each task, figure out the "best" match across volunteer's tasksWilling
-    //    by calling Hugging Face to get a similarity for each skill, then computing
-    //    a final weighted score with matchingService.calculateMatchScore
-    async function getBestMatchScore(task) {
-      let highest = 0;
-
-      // If volunteer has no tasksWilling, skip
-      if (!volunteer.tasksWilling || volunteer.tasksWilling.length === 0) {
-        return 0;
-      }
-
-      for (const skillObj of volunteer.tasksWilling) {
-        const skillText = skillObj.title || "";
-        // 1) Call hugging face to get similarity in [0..1]
-        const similarity = await matchingService.calculateTaskSimilarity(
-          task.title,
-          skillText
-        );
-        // 2) Then compute the final match score (similarity + urgency + availability, etc.)
-        const currentScore = matchingService.calculateMatchScore(
-          similarity,
-          task,
-          volunteer
-        );
-        if (currentScore > highest) {
-          highest = currentScore;
-        }
-      }
-
-      return highest; // best match for that task
+    // 3) get all matched tasks from hugging-face approach
+    const allMatchedTasks = await matchingService.findMatches(volunteer, requestors);
+    /**
+     * allMatchedTasks is an array of objects:
+     *   {
+     *     requestorId,
+     *     requestorName,
+     *     taskTitle,
+     *     urgency,
+     *     specialtyRequired,
+     *     finalScore
+     *   }
+     * but we also want to pass .address
+     */
+    
+    // We'll fetch each user's address so we can show it
+    // in the final data. Alternatively, we could have matchingService
+    // store it from the get-go, but let's do it here for clarity.
+    const userMap = new Map();
+    for (const r of requestors) {
+      userMap.set(String(r._id), r);
     }
 
-    // 6) process a list of tasks => assign matchScore => filter => sort => top 3
-    async function processTasks(taskArray) {
-      const results = await Promise.all(
-        taskArray.map(async (task) => {
-          const matchScore = await getBestMatchScore(task);
-          return { ...task, matchScore };
-        })
-      );
+    // 4) separate final tasks into 3 arrays
+    const privateOrgs = [];
+    const requestorTasks = [];
+    const governmentOrgs = [];
 
-      return results
-        .filter((item) => item.matchScore > 0)
-        .sort((a, b) => b.matchScore - a.matchScore)
-        .slice(0, 3);
+    for (const task of allMatchedTasks) {
+      // find the user in userMap to get .address
+      const userObj = userMap.get(String(task.requestorId));
+      const address = userObj?.address || "No address provided";
+
+      // create a final “match item” that includes the address
+      const finalItem = {
+        requestorId: task.requestorId,
+        requestorName: task.requestorName,
+        address,
+        taskTitle: task.taskTitle,
+        urgency: task.urgency,
+        specialtyRequired: task.specialtyRequired,
+        finalScore: task.finalScore,
+      };
+
+      // grouping logic
+      const lowerName = task.requestorName.toLowerCase();
+      if (
+        lowerName.includes("fire") ||
+        lowerName.includes("lafd") ||
+        lowerName.includes("fema")
+      ) {
+        // Government
+        governmentOrgs.push(finalItem);
+      } else if (
+        lowerName.includes("foundation") ||
+        lowerName.includes("red cross") ||
+        lowerName.includes("army") ||
+        lowerName.includes("rubicon") ||
+        lowerName.includes("team rubicon")
+      ) {
+        // Private organizations
+        privateOrgs.push(finalItem);
+      } else {
+        // Everyone else => "Individual Requesters"
+        requestorTasks.push(finalItem);
+      }
     }
 
-    // 7) run the process for requestors, private orgs, and gov orgs
-    const scoredRequestorTasks = await processTasks(requestorTasks);
-    const scoredPrivateOrgs = await processTasks(privateOrgTasks);
-    const scoredGovernmentOrgs = await processTasks(governmentOrgTasks);
-
-    console.log("Match counts:", {
-      requestors: scoredRequestorTasks.length,
-      private: scoredPrivateOrgs.length,
-      government: scoredGovernmentOrgs.length,
-    });
-
-    // 8) Return the final matched tasks to the frontend
     return res.json({
-      requestorTasks: scoredRequestorTasks,
-      privateOrgs: scoredPrivateOrgs,
-      governmentOrgs: scoredGovernmentOrgs,
+      privateOrgs,
+      requestorTasks,
+      governmentOrgs,
     });
   } catch (error) {
-    console.error("Detailed matching error:", {
-      message: error.message,
-      stack: error.stack,
-      volunteerId: req.params.volunteerId,
-    });
-
-    return res.status(500).json({
-      error: "Error finding matches",
-      details: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    });
+    console.error("[matchingRoutes] Error in matching route:", error);
+    return res.status(500).json({ error: "Error matching tasks" });
   }
 });
 
