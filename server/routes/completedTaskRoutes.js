@@ -12,10 +12,23 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
-    const completedTasks = await CompletedTask.find();
+    const completedTasks = await CompletedTask.find({
+      completedBy: req.params.userId
+    });
     res.json(completedTasks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/category/:category", async (req, res) => {
+  try {
+    const tasks = await CompletedTask.find({
+      category: req.params.category
+    });
+    res.json(tasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
