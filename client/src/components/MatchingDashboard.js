@@ -31,6 +31,7 @@ function getCardStyle(type) {
 const MatchCard = ({ item, cardType, volunteerId }) => {
   const [expanded, setExpanded] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const navigate = useNavigate();
 
   const isIndividual = !!item.requester;
@@ -59,9 +60,41 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
 
   const handleCompleteClick = (e) => {
     e.stopPropagation();
-    navigate("/sustainability", {
-      state: { taskToComplete: item, volunteerId: volunteerId }
-    });
+    setShowUploadDialog(true);
+  };
+
+  const handleFileUpload = async (file) => {
+    try {
+      setUploadStatus('uploading');
+      
+      const formData = new FormData();
+      formData.append('verificationDoc', file);
+
+      await fetch('http://localhost:8080/api/completed-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskId: item._id,
+          taskTitle: item.title,
+          userId: item.requester?.id || item.organization?.id,
+          category: item.category,
+          completedBy: volunteerId,
+          verificationDoc: file.name
+        }),
+      });
+
+      setShowUploadDialog(false);
+      setUploadStatus('success');
+      setTimeout(() => setUploadStatus(''), 3000);
+      
+      // Update the sustainability tracker view
+      navigate("/sustainability");
+    } catch (error) {
+      console.error('Error saving completed task:', error);
+      setUploadStatus('error');
+    }
   };
 
   const styles = {
@@ -156,7 +189,94 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
           )}
         </div>
       )}
-      
+
+      {showUploadDialog && (
+        <>
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 999
+            }}
+            onClick={() => setShowUploadDialog(false)}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'white',
+              padding: '32px',
+              borderRadius: '24px',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.2)',
+              width: '90%',
+              maxWidth: '500px',
+              zIndex: 1000
+            }}
+          >
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              marginBottom: '1rem'
+            }}>
+              Upload Verification Document
+            </h2>
+            <p style={{
+              color: '#666',
+              marginBottom: '1rem'
+            }}>
+              Please upload a document to verify task completion.
+              Accepted formats: PDF, JPG, JPEG, PNG
+            </p>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => {
+                if (e.target.files[0]) {
+                  handleFileUpload(e.target.files[0]);
+                }
+              }}
+              style={{marginBottom: '1rem'}}
+            />
+            <div style={{display: 'flex', gap: '1rem', marginTop: '1rem'}}>
+              <button
+                onClick={() => setShowUploadDialog(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  backgroundColor: '#666',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {uploadStatus && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: 'white',
+          padding: '16px 24px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          zIndex: 1001
+        }}>
+          {uploadStatus === 'uploading' ? 'Uploading document...' : 'Task marked as complete!'}
+        </div>
+      )}
     </div>
   );
 };

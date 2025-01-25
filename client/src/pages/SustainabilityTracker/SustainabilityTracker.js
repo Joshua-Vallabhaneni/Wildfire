@@ -15,25 +15,28 @@ const SustainabilityTracker = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/api/users');
-        const data = await response.json();
-        const allTasks = data
-          .filter(user => !user.isVolunteer)
-          .flatMap(user => user.tasksRequested.map(task => ({
-            ...task,
-            userId: user._id,
-            userName: user.name
-          })));
-        setTasks(allTasks);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      // Fetch all tasks
+      const tasksResponse = await fetch('http://localhost:8080/api/users');
+      const tasksData = await tasksResponse.json();
+      const allTasks = tasksData
+        .filter(user => !user.isVolunteer)
+        .flatMap(user => user.tasksRequested);
+      setTasks(allTasks);
 
-    fetchTasks();
+      // Fetch completed tasks
+      const completedResponse = await fetch('http://localhost:8080/api/completed-tasks');
+      const completedData = await completedResponse.json();
+      setCompletedTasks(completedData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const handleTaskComplete = (task) => {
@@ -43,41 +46,45 @@ const SustainabilityTracker = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      try {
-        setUploadStatus('uploading');
-        
-        await fetch('http://localhost:8080/api/completed-tasks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            taskId: selectedTask._id,
-            userId: selectedTask.userId,
-            category: selectedTask.category,
-            completedBy: selectedTask.completedBy,
-            verificationDoc: file.name
-          }),
-        });
+    if (!file) return;
 
-        setCompletedTasks([...completedTasks, selectedTask]);
-        setShowUploadDialog(false);
-        setUploadStatus('success');
-        setTimeout(() => setUploadStatus(''), 3000);
-      } catch (error) {
-        console.error('Error saving completed task:', error);
-        setUploadStatus('error');
-      }
+    try {
+      setUploadStatus('uploading');
+
+      // Simplified - just send basic task info
+      await fetch('http://localhost:8080/api/completed-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskId: selectedTask._id,
+          taskTitle: selectedTask.title,
+          category: selectedTask.category,
+          verificationDoc: 'document.pdf' // Placeholder
+        }),
+      });
+
+      // Update local state
+      setCompletedTasks(prev => [...prev, selectedTask]);
+      
+      // Refetch data to update progress
+      await fetchData();
+
+      setShowUploadDialog(false);
+      setUploadStatus('success');
+      
+      setTimeout(() => setUploadStatus(''), 3000);
+    } catch (error) {
+      console.error('Error completing task:', error);
+      setUploadStatus('error');
     }
   };
 
   const calculateProgress = (category) => {
-    const categoryTasks = tasks.filter(task => task.category === category);
-    const completedCategoryTasks = completedTasks.filter(task => task.category === category);
-    return categoryTasks.length > 0 
-      ? (completedCategoryTasks.length / categoryTasks.length) * 100 
-      : 0;
+    const tasksInCategory = tasks.filter(task => task.category === category).length;
+    const completedInCategory = completedTasks.filter(task => task.category === category).length;
+    return tasksInCategory > 0 ? (completedInCategory / tasksInCategory) * 100 : 0;
   };
 
   const totalProgress = tasks.length > 0 
@@ -129,57 +136,12 @@ const SustainabilityTracker = () => {
       borderRadius: '12px',
       height: '8px',
       overflow: 'hidden',
+      marginTop: '12px',
     },
     progressFill: {
       height: '100%',
       background: 'linear-gradient(135deg, #FF4500, #FFA500)',
       transition: 'width 0.5s ease',
-    },
-    taskCard: {
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      padding: '20px',
-      marginBottom: '16px',
-      boxShadow: '0 4px 12px rgba(255, 69, 0, 0.1)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    button: {
-      background: 'linear-gradient(135deg, #FF4500, #FFA500)',
-      color: 'white',
-      padding: '12px 24px',
-      borderRadius: '12px',
-      border: 'none',
-      fontWeight: 600,
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    },
-    modal: {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      backgroundColor: 'white',
-      padding: '32px',
-      borderRadius: '24px',
-      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.2)',
-      width: '90%',
-      maxWidth: '500px',
-      zIndex: 1000,
-    },
-    overlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      backdropFilter: 'blur(4px)',
-      zIndex: 999,
     }
   };
 
@@ -188,6 +150,7 @@ const SustainabilityTracker = () => {
       <div style={styles.content}>
         <h1 style={styles.title}>Sustainability Tracker</h1>
 
+        {/* Overall Progress */}
         <div style={styles.progressContainer}>
           <h2 style={styles.categoryTitle}>Overall Progress</h2>
           <div style={styles.progressBar}>
@@ -198,6 +161,7 @@ const SustainabilityTracker = () => {
           </p>
         </div>
 
+        {/* Category Progress */}
         {Object.entries(categories).map(([category, description]) => {
           const progress = calculateProgress(category);
           return (
@@ -212,51 +176,78 @@ const SustainabilityTracker = () => {
           );
         })}
 
-        <div style={{marginTop: '32px'}}>
-          <h2 style={styles.categoryTitle}>Outstanding Tasks</h2>
-          {tasks.filter(task => !completedTasks.includes(task)).map((task, index) => (
-            <div key={index} style={styles.taskCard}>
-              <div>
-                <h3 style={{fontWeight: 600, marginBottom: '4px'}}>{task.title}</h3>
-                <p style={{color: '#666'}}>Category: {task.category}</p>
-                <p style={{color: '#666'}}>Requested by: {task.userName}</p>
-              </div>
-              <button
-                onClick={() => handleTaskComplete(task)}
-                style={styles.button}
-              >
-                <Upload size={16} />
-                Complete
-              </button>
-            </div>
-          ))}
-        </div>
-
+        {/* Upload Dialog */}
         {showUploadDialog && (
           <>
-            <div style={styles.overlay} onClick={() => setShowUploadDialog(false)} />
-            <div style={styles.modal}>
-              <h2 style={styles.categoryTitle}>Upload Verification Document</h2>
-              <p style={{color: '#666', margin: '16px 0'}}>
-                Please upload a document to verify task completion.
-                Accepted formats: PDF, JPG, JPEG, PNG
-              </p>
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999
+            }} onClick={() => setShowUploadDialog(false)} />
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'white',
+              padding: '32px',
+              borderRadius: '24px',
+              width: '90%',
+              maxWidth: '500px',
+              zIndex: 1000
+            }}>
+              <h2 style={{marginBottom: '1rem'}}>Upload Verification</h2>
               <input
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept="*/*"
                 onChange={handleFileUpload}
-                style={{marginBottom: '16px'}}
               />
-              <button
-                onClick={() => setShowUploadDialog(false)}
-                style={{...styles.button, backgroundColor: '#666', marginTop: '16px'}}
-              >
+              <button onClick={() => setShowUploadDialog(false)}
+                style={{marginTop: '1rem', padding: '8px 16px'}}>
                 Cancel
               </button>
             </div>
           </>
         )}
 
+        {/* Task List */}
+        <div style={{marginTop: '32px'}}>
+          <h2 style={styles.categoryTitle}>Outstanding Tasks</h2>
+          {tasks.filter(task => !completedTasks.some(ct => ct.taskId === task._id))
+            .map((task, index) => (
+              <div key={index} style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h3>{task.title}</h3>
+                  <p>Category: {task.category}</p>
+                </div>
+                <button onClick={() => handleTaskComplete(task)}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF4500, #FFA500)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}>
+                  Complete Task
+                </button>
+              </div>
+            ))}
+        </div>
+
+        {/* Status Notification */}
         {uploadStatus && (
           <div style={{
             position: 'fixed',
@@ -266,8 +257,9 @@ const SustainabilityTracker = () => {
             padding: '16px 24px',
             borderRadius: '12px',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            zIndex: 1001
           }}>
-            {uploadStatus === 'uploading' ? 'Uploading document...' : 'Task marked as complete!'}
+            {uploadStatus === 'uploading' ? 'Marking as complete...' : 'Task completed!'}
           </div>
         )}
       </div>

@@ -16,14 +16,11 @@ app.use(express.json());
 
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
-// Removed the old tasks route
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/orgs", require("./routes/orgRoutes"));
-
 app.use("/api/background-check", require("./routes/backgroundCheckRoutes"));
-
-app.use("/api/matching", require("./routes/matchingRoutes")); // <--- IMPORTANT
-
+app.use("/api/matching", require("./routes/matchingRoutes"));
+app.use("/api/completed-tasks", require("./routes/completedTaskRoutes")); // New route
 
 // Simple test endpoint
 app.get("/", (req, res) => {
