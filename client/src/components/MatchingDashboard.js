@@ -32,6 +32,7 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
   const [expanded, setExpanded] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
   const isIndividual = !!item.requester;
@@ -65,35 +66,51 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
 
   const handleFileUpload = async (file) => {
     try {
+      setUploading(true);
       setUploadStatus('uploading');
       
       const formData = new FormData();
       formData.append('verificationDoc', file);
 
-      await fetch('http://localhost:8080/api/completed-tasks', {
+      // First save the file metadata
+      const response = await fetch('http://localhost:8080/api/completed-tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          taskId: item._id,
+          taskId: item._id || `${item.title}-${Date.now()}`, // Fallback ID if none exists
           taskTitle: item.title,
-          userId: item.requester?.id || item.organization?.id,
-          category: item.category,
+          userId: isIndividual ? item.requester?.id : item.organization?.id,
+          category: item.category || 'Uncategorized', // Ensure category is always set
           completedBy: volunteerId,
-          verificationDoc: file.name
+          verificationDoc: file.name,
+          taskType: cardType // Adding task type for better categorization
         }),
       });
 
-      setShowUploadDialog(false);
+      if (!response.ok) {
+        throw new Error('Failed to save task completion');
+      }
+
       setUploadStatus('success');
-      setTimeout(() => setUploadStatus(''), 3000);
       
-      // Update the sustainability tracker view
-      navigate("/sustainability");
+      // Show success message briefly before redirecting
+      setTimeout(() => {
+        setShowUploadDialog(false);
+        navigate("/sustainability", { 
+          state: { 
+            justCompleted: true,
+            category: item.category 
+          }
+        });
+      }, 1500);
+
     } catch (error) {
-      console.error('Error saving completed task:', error);
+      console.error('Error completing task:', error);
       setUploadStatus('error');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -102,6 +119,7 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
       display: 'flex',
       gap: '0.5rem',
       marginTop: '1rem',
+      justifyContent: 'flex-end', // Align buttons to the right
     },
     button: {
       padding: '0.6rem 1rem',
@@ -114,13 +132,36 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
       alignItems: 'center',
       gap: '0.4rem',
       color: '#fff',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      transition: 'all 0.2s ease',
     },
     messageButton: {
       backgroundColor: '#0095F6',
     },
     completeButton: {
       backgroundColor: '#4CAF50',
+    },
+    uploadDialog: {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      backgroundColor: 'white',
+      padding: '2rem',
+      borderRadius: '16px',
+      width: '90%',
+      maxWidth: '500px',
+      zIndex: 1000,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+    },
+    overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 999
     }
   };
 
@@ -169,6 +210,7 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
             <button 
               onClick={handleCompleteClick}
               style={{...styles.button, ...styles.completeButton}}
+              disabled={uploading}
             >
               ✓ Complete Task
             </button>
@@ -192,45 +234,12 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
 
       {showUploadDialog && (
         <>
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 999
-            }}
-            onClick={() => setShowUploadDialog(false)}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: 'white',
-              padding: '32px',
-              borderRadius: '24px',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.2)',
-              width: '90%',
-              maxWidth: '500px',
-              zIndex: 1000
-            }}
-          >
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              marginBottom: '1rem'
-            }}>
+          <div style={styles.overlay} onClick={() => !uploading && setShowUploadDialog(false)} />
+          <div style={styles.uploadDialog} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem' }}>
               Upload Verification Document
             </h2>
-            <p style={{
-              color: '#666',
-              marginBottom: '1rem'
-            }}>
+            <p style={{ color: '#666', marginBottom: '1rem' }}>
               Please upload a document to verify task completion.
               Accepted formats: PDF, JPG, JPEG, PNG
             </p>
@@ -242,19 +251,22 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
                   handleFileUpload(e.target.files[0]);
                 }
               }}
-              style={{marginBottom: '1rem'}}
+              disabled={uploading}
+              style={{ marginBottom: '1rem' }}
             />
-            <div style={{display: 'flex', gap: '1rem', marginTop: '1rem'}}>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
               <button
-                onClick={() => setShowUploadDialog(false)}
+                onClick={() => !uploading && setShowUploadDialog(false)}
                 style={{
                   padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
+                  borderRadius: '8px',
                   border: 'none',
                   backgroundColor: '#666',
                   color: 'white',
-                  cursor: 'pointer'
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  opacity: uploading ? 0.7 : 1
                 }}
+                disabled={uploading}
               >
                 Cancel
               </button>
@@ -280,6 +292,7 @@ const MatchCard = ({ item, cardType, volunteerId }) => {
     </div>
   );
 };
+
 
 const MatchingDashboard = ({ volunteerId }) => {
   const [matches, setMatches] = useState(null);
