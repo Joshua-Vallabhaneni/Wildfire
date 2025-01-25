@@ -75,10 +75,11 @@ class MatchingService {
   /**
    * Weighted final:
    *  60% similarity
-   *  25% urgency
-   *  15% availability
-   * If specialty is required but volunteer lacks => half final. 
-   * Min final => 0.15 so we never get 0.
+   *   5% urgency
+   *  35% availability
+   *
+   * If specialty is required but volunteer lacks => half final.
+   * Minimum final => 0.15 so we never get 0.
    */
   calculateMatchScore(similarity, urgency, availability, specialtyRequired, volunteerHasSpecialty) {
     // partial penalty if lacks specialty
@@ -88,10 +89,14 @@ class MatchingService {
 
     let score =
       similarity * 0.6 +
-      urgency * 0.25 +
-      availability * 0.15;
+      urgency * 0.05 +         // NOW 5%
+      availability * 0.35;    // NOW 35%
 
-    if (score < 0.15) score = 0.15;
+    // enforce min final
+    if (score < 0.15) {
+      score = 0.15;
+    }
+
     return score;
   }
 
