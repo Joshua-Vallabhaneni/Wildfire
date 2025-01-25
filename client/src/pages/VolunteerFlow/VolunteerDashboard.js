@@ -14,14 +14,13 @@ function VolunteerDashboard() {
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
-    // Validate userId
     if (!userId) {
       setWarning("No user ID found in the URL.");
       setLoading(false);
       return;
     }
 
-    // Attempt to get user's geolocation
+    // Attempt to get user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -31,26 +30,27 @@ function VolunteerDashboard() {
           });
         },
         () => {
-          setWarning("Couldn't get location. Using default Los Angeles coords.");
+          setWarning("Couldn't get location. Using default LA coords.");
           setUserLocation({ lat: 34.0522, lng: -118.2437 });
         }
       );
     } else {
-      setWarning("Geolocation not supported. Using default Los Angeles coords.");
+      setWarning("Geolocation not supported. Using default LA coords.");
       setUserLocation({ lat: 34.0522, lng: -118.2437 });
     }
 
-    // Fetch organizations (for map markers)
+    // We'll also fetch /api/orgs for the map. 
+    // (But note: the actual "always visible" org tasks are fetched in MatchingDashboard)
     const fetchOrgs = async () => {
       try {
         const resp = await fetch("http://localhost:8080/api/orgs");
         if (!resp.ok) {
-          throw new Error(`Failed to fetch orgs: status ${resp.status}`);
+          throw new Error(`Failed to fetch orgs. Status: ${resp.status}`);
         }
         const data = await resp.json();
         setOrgs(data);
       } catch (err) {
-        setWarning("Error fetching organizations. Please try again later.");
+        setWarning(`Error fetching organizations: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -61,61 +61,49 @@ function VolunteerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ ...styles.container, justifyContent: "center" }}>
-        <div style={{ fontSize: "1.25rem", color: "#666" }}>Loading...</div>
+      <div style={styles.container}>
+        <div style={styles.loadingText}>Loading...</div>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* Top Navigation Bar */}
+      {/* The black nav bar + switch button */}
       <nav style={styles.navBar}>
         <div style={styles.navLinks}>
-          <Link
-            to={`/volunteer/${userId}/dashboard`}
-            style={styles.navLinkItem}
-          >
+          <Link to={`/volunteer/${userId}/dashboard`} style={styles.navLinkItem}>
             Dashboard
           </Link>
-          <Link
-            to="/messages"
-            state={{ userId: userId }}
-            style={styles.navLinkItem}
-          >
+          <Link to="/messages" state={{ userId }} style={styles.navLinkItem}>
             Direct Messages
           </Link>
           <Link to="/sustainability" style={styles.navLinkItem}>
             Sustainability Tracker
           </Link>
         </div>
-        {/* Button to switch between tasks/map */}
         <button
-          onClick={() =>
-            setCurrentView(currentView === "tasks" ? "map" : "tasks")
-          }
           style={styles.switchButton}
+          onClick={() => setCurrentView(currentView === "tasks" ? "map" : "tasks")}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = styles.switchButtonHover.transform;
-            e.currentTarget.style.boxShadow = styles.switchButtonHover.boxShadow;
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,153,204,0.4)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "none";
-            e.currentTarget.style.boxShadow = styles.switchButton.boxShadow;
+            e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,153,204,0.3)";
           }}
         >
           {currentView === "tasks" ? "Switch to Map View" : "Switch to Tasks"}
         </button>
       </nav>
 
-      {/* Warning banner if geolocation or fetch failed */}
       {warning && (
         <div style={styles.warningBanner}>
           <strong>Warning:</strong> {warning}
         </div>
       )}
 
-      {/* Main Content: tasks or map */}
       <div style={styles.contentWrapper}>
         {currentView === "tasks" ? (
           <MatchingDashboard volunteerId={userId} />
@@ -127,60 +115,46 @@ function VolunteerDashboard() {
   );
 }
 
-/**
- * Styles
- */
 const styles = {
   container: {
-    backgroundColor: "#FFA500", // Solid orange background
-    position: "relative",
+    backgroundColor: "#FFA500",
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
-    alignItems: "stretch",
-    fontFamily: '"Inter", -apple-system, sans-serif',
-    color: "#1a1a1a",
+    position: "relative",
   },
   navBar: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: "1rem 2rem",
   },
   navLinks: {
     display: "flex",
-    gap: "2rem",
+    gap: "1rem",
   },
   navLinkItem: {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    textDecoration: "none",
-    color: "#fff", // White text
-    backgroundColor: "#000", // Black background
-    padding: "0.6rem 1.2rem",
+    backgroundColor: "#000",
+    color: "#fff",
+    padding: "0.6rem 1rem",
     borderRadius: "8px",
-    transition: "all 0.3s ease",
+    textDecoration: "none",
+    fontWeight: 600,
   },
   switchButton: {
-    fontSize: "1rem",
-    fontWeight: 700,
-    color: "#fff",
-    // Contrasting teal gradient
     background: "linear-gradient(135deg, #0099CC, #66CCFF)",
+    color: "#fff",
     border: "none",
     borderRadius: "999px",
     padding: "0.75rem 1.5rem",
+    fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0 4px 20px rgba(0, 153, 204, 0.3)",
+    boxShadow: "0 4px 20px rgba(0,153,204,0.3)",
     transition: "transform 0.3s ease, box-shadow 0.3s ease",
   },
-  switchButtonHover: {
-    transform: "translateY(-2px) scale(1.05)",
-    boxShadow: "0 8px 24px rgba(0, 153, 204, 0.4)",
-  },
   warningBanner: {
-    margin: "1rem auto",
-    padding: "0.75rem 1rem",
+    margin: "0.5rem auto",
+    padding: "0.5rem 1rem",
     borderRadius: "6px",
     maxWidth: "600px",
     backgroundColor: "#fff3cd",
@@ -194,6 +168,11 @@ const styles = {
     justifyContent: "center",
     alignItems: "flex-start",
     padding: "2rem",
+  },
+  loadingText: {
+    fontSize: "1.25rem",
+    color: "#666",
+    margin: "auto",
   },
 };
 
