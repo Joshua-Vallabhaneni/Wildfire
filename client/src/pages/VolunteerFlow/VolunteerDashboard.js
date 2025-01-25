@@ -1,4 +1,5 @@
 // client/src/pages/VolunteerFlow/VolunteerDashboard.js
+
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MatchingDashboard from "../../components/MatchingDashboard";
@@ -60,65 +61,62 @@ function VolunteerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <span className="text-lg text-gray-600">Loading...</span>
+      <div style={{ ...styles.container, justifyContent: "center" }}>
+        <div style={{ fontSize: "1.25rem", color: "#666" }}>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Menu */}
-      <nav className="bg-white shadow p-4 mb-4">
-        <ul className="flex space-x-6">
-          <li>
-            <Link
-              to={`/volunteer/${userId}/dashboard`}
-              className="text-blue-600 hover:underline"
-            >
-              Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/messages"
-              state={{ userId: userId }}
-              className="text-blue-600 hover:underline"
-            >
-              Direct Messages
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/sustainability"
-              className="text-blue-600 hover:underline"
-            >
-              Sustainability Tracker
-            </Link>
-          </li>
-        </ul>
+    <div style={styles.container}>
+      {/* Top Navigation Bar */}
+      <nav style={styles.navBar}>
+        <div style={styles.navLinks}>
+          <Link
+            to={`/volunteer/${userId}/dashboard`}
+            style={styles.navLinkItem}
+          >
+            Dashboard
+          </Link>
+          <Link
+            to="/messages"
+            state={{ userId: userId }}
+            style={styles.navLinkItem}
+          >
+            Direct Messages
+          </Link>
+          <Link to="/sustainability" style={styles.navLinkItem}>
+            Sustainability Tracker
+          </Link>
+        </div>
+        {/* Button to switch between tasks/map */}
+        <button
+          onClick={() =>
+            setCurrentView(currentView === "tasks" ? "map" : "tasks")
+          }
+          style={styles.switchButton}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = styles.switchButtonHover.transform;
+            e.currentTarget.style.boxShadow = styles.switchButtonHover.boxShadow;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "none";
+            e.currentTarget.style.boxShadow = styles.switchButton.boxShadow;
+          }}
+        >
+          {currentView === "tasks" ? "Switch to Map View" : "Switch to Tasks"}
+        </button>
       </nav>
 
-      <div className="p-4 max-w-4xl mx-auto">
-        {/* Warning banner if geolocation or fetch failed */}
-        {warning && (
-          <div className="p-4 mb-4 border border-yellow-400 bg-yellow-50 text-yellow-800 rounded">
-            <strong>Warning:</strong> {warning}
-          </div>
-        )}
-
-        {/* Header row + toggle button */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Volunteer Dashboard</h2>
-          <button
-            onClick={() => setCurrentView(currentView === "tasks" ? "map" : "tasks")}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            Switch to {currentView === "tasks" ? "Map" : "Tasks"} View
-          </button>
+      {/* Warning banner if geolocation or fetch failed */}
+      {warning && (
+        <div style={styles.warningBanner}>
+          <strong>Warning:</strong> {warning}
         </div>
+      )}
 
-        {/* Main content: either the matched tasks or the map */}
+      {/* Main Content: tasks or map */}
+      <div style={styles.contentWrapper}>
         {currentView === "tasks" ? (
           <MatchingDashboard volunteerId={userId} />
         ) : (
@@ -128,5 +126,75 @@ function VolunteerDashboard() {
     </div>
   );
 }
+
+/**
+ * Styles
+ */
+const styles = {
+  container: {
+    backgroundColor: "#FFA500", // Solid orange background
+    position: "relative",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    fontFamily: '"Inter", -apple-system, sans-serif',
+    color: "#1a1a1a",
+  },
+  navBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "1rem 2rem",
+  },
+  navLinks: {
+    display: "flex",
+    gap: "2rem",
+  },
+  navLinkItem: {
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    textDecoration: "none",
+    color: "#fff", // White text
+    backgroundColor: "#000", // Black background
+    padding: "0.6rem 1.2rem",
+    borderRadius: "8px",
+    transition: "all 0.3s ease",
+  },
+  switchButton: {
+    fontSize: "1rem",
+    fontWeight: 700,
+    color: "#fff",
+    // Contrasting teal gradient
+    background: "linear-gradient(135deg, #0099CC, #66CCFF)",
+    border: "none",
+    borderRadius: "999px",
+    padding: "0.75rem 1.5rem",
+    cursor: "pointer",
+    boxShadow: "0 4px 20px rgba(0, 153, 204, 0.3)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  },
+  switchButtonHover: {
+    transform: "translateY(-2px) scale(1.05)",
+    boxShadow: "0 8px 24px rgba(0, 153, 204, 0.4)",
+  },
+  warningBanner: {
+    margin: "1rem auto",
+    padding: "0.75rem 1rem",
+    borderRadius: "6px",
+    maxWidth: "600px",
+    backgroundColor: "#fff3cd",
+    border: "1px solid #ffeeba",
+    color: "#856404",
+    fontSize: "1rem",
+  },
+  contentWrapper: {
+    flex: 1,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    padding: "2rem",
+  },
+};
 
 export default VolunteerDashboard;
