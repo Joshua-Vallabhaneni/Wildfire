@@ -82,11 +82,9 @@ function LandingPage() {
       boxShadow: "0 4px 20px rgba(255, 69, 0, 0.2)",
       transition: "transform 0.3s ease",
       cursor: "pointer",
-      ":hover": {
-        transform: "scale(1.05)",
-      },
+      // Note: Inline styles do not support pseudo-selectors like :hover
+      // To achieve hover effects, consider using CSS classes or a CSS-in-JS library
     },
-    // 1) Increased to 48px so the flame is bigger
     logo: {
       width: "48px",
       height: "48px",
@@ -146,16 +144,8 @@ function LandingPage() {
       color: "#1a1a1a",
       fontFamily: '"Inter", sans-serif',
       outline: "none",
-      ":hover": {
-        borderColor: "#FFA500",
-      },
-      ":focus": {
-        borderColor: "#FF4500",
-        boxShadow: "0 0 0 3px rgba(255, 69, 0, 0.1)",
-      },
-      "::placeholder": {
-        color: "#999999",
-      },
+      // Note: Inline styles do not support pseudo-selectors like :hover or :focus
+      // To achieve hover and focus effects, consider using CSS classes or a CSS-in-JS library
     },
     buttonContainer: {
       display: "flex",
@@ -176,14 +166,8 @@ function LandingPage() {
       boxShadow: "0 4px 20px rgba(255, 69, 0, 0.2)",
       position: "relative",
       overflow: "hidden",
-      ":hover": {
-        transform: "translateY(-2px) scale(1.02)",
-        boxShadow: "0 6px 24px rgba(255, 69, 0, 0.3)",
-      },
-      ":active": {
-        transform: "translateY(0) scale(0.98)",
-        boxShadow: "0 3px 12px rgba(255, 69, 0, 0.2)",
-      },
+      // Note: Inline styles do not support pseudo-selectors like :hover or :active
+      // To achieve hover and active effects, consider using CSS classes or a CSS-in-JS library
     },
     secondaryButton: {
       padding: "17px 24px",
@@ -195,15 +179,8 @@ function LandingPage() {
       transition: "all 0.3s ease",
       backgroundColor: "rgba(255, 255, 255, 0.8)",
       color: "#FF4500",
-      ":hover": {
-        backgroundColor: "rgba(255, 69, 0, 0.05)",
-        transform: "translateY(-2px) scale(1.02)",
-        borderColor: "#FF4500",
-        boxShadow: "0 6px 24px rgba(255, 69, 0, 0.2)",
-      },
-      ":active": {
-        transform: "translateY(0) scale(0.98)",
-      },
+      // Note: Inline styles do not support pseudo-selectors like :hover or :active
+      // To achieve hover and active effects, consider using CSS classes or a CSS-in-JS library
     },
   };
 
@@ -215,27 +192,19 @@ function LandingPage() {
       <div style={styles.card}>
         <div style={styles.logoContainer}>
           {/* 
-            2) New flame path, bigger and more like a flame icon 
-            (No animation; single fill color)
+            Replaced SVG with img tag referencing favicon.ico 
+            Ensure favicon.ico is placed in the public folder.
           */}
-          <svg viewBox="0 0 64 64" style={styles.logo}>
-            <path
-              fill="#FF5722"
-              d="
-                M32 4
-                C22 14, 18 22, 18 32
-                c0 11, 10 22, 14 26
-                c4-4, 14-15, 14-26
-                c0-10-4-18-14-28
-                Z
-              "
-            />
-          </svg>
+          <img
+            src="/favicon.ico"
+            alt="Logo"
+            style={styles.logo}
+          />
         </div>
 
         <div style={styles.titleContainer}>
-          <h1 style={styles.mainTitle}>Wildfire Aid Network</h1>
-          <p style={styles.subtitle}>Connect with relief efforts and recovery resources</p>
+          <h1 style={styles.mainTitle}>FireSync</h1>
+          <p style={styles.subtitle}>Connect with Relief Efforts and Recovery Resources</p>
         </div>
 
         <div style={styles.inputGroup}>
@@ -245,6 +214,7 @@ function LandingPage() {
             name="name"
             value={formData.name}
             onChange={handleChange}
+            placeholder="Enter your full name"
           />
         </div>
 
@@ -255,6 +225,8 @@ function LandingPage() {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
+            placeholder="Enter your phone number"
+            type="tel"
           />
         </div>
 
@@ -266,6 +238,7 @@ function LandingPage() {
             value={formData.email}
             onChange={handleChange}
             type="email"
+            placeholder="Enter your email address"
           />
         </div>
 
@@ -277,6 +250,8 @@ function LandingPage() {
             value={formData.age}
             onChange={handleChange}
             type="number"
+            placeholder="Enter your age"
+            min="0"
           />
         </div>
 
@@ -287,6 +262,7 @@ function LandingPage() {
             name="address"
             value={formData.address}
             onChange={handleChange}
+            placeholder="Enter your location"
           />
         </div>
 
