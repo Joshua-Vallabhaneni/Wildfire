@@ -85,6 +85,20 @@ function MatchingDashboard({ volunteerId }) {
     );
   }
 
+  const handleMessageClick = (e, item) => {
+  e.stopPropagation();
+  navigate("/messages", {
+    state: {
+      userId: volunteerId,
+      recipientId: item.requester?.id || item.userId,
+      recipientName: item.requester?.name || item.userName,
+      isNewChat: true,
+    },
+  });
+};
+
+
+
   return (
     <div style={styles.container}>
       <div style={styles.card}>
