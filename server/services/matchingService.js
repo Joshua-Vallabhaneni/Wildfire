@@ -96,18 +96,15 @@ Score:`;
     return 0.3 + overlapRatio * 0.5; // Scale to [0.3..0.8]
   }
 
-  calculateMatchScore(similarity, urgency, availability, specialtyRequired, volunteerHasSpecialty) {
-    if (specialtyRequired && !volunteerHasSpecialty) {
-      similarity *= 0.5;
-    }
+  calculateMatchScore(similarity, urgency, availability) {
+  // Calculate the weighted score
+  const score =
+    similarity * 0.8 +  // 80% weight for similarity
+    urgency * 0.124 +    
+    availability * 0.076; 
 
-    let score =
-      similarity * 0.6 +    // 60% similarity
-      urgency * 0.05 +      // 5% urgency
-      availability * 0.35;   // 35% availability
-
-    return Math.max(score, 0.15); // Minimum score of 0.15
-  }
+  return Math.max(score, 0); // Ensure the score is not negative
+}
 
   computeAvailabilityOverlap(volunteerAvail = {}, requestorAvail = {}) {
     let requestorSlotCount = 0;
