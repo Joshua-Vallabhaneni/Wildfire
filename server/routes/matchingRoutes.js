@@ -1,23 +1,14 @@
-// server/routes/matchingRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const Organization = require("../models/Organization");
 const matchingService = require("../services/matchingService");
 
-/**
- * GET /api/matching/:volunteerId
- *  1) load volunteer (isVolunteer: true)
- *  2) load all requestors (isVolunteer: false)
- *  3) pass to matchingService => array of matched tasks
- *  4) group them into privateOrgs, requestorTasks, governmentOrgs
- *     by name-based logic, and include .address so the front-end can display it
- */
 router.get("/:volunteerId", async (req, res) => {
   try {
     const { volunteerId } = req.params;
 
-    // 1) find volunteer
+    // 1) Find volunteer
     const volunteer = await User.findById(volunteerId);
     if (!volunteer) {
       return res.status(404).json({ error: "Volunteer not found" });
@@ -26,9 +17,9 @@ router.get("/:volunteerId", async (req, res) => {
       return res.status(400).json({ error: "User is not a volunteer" });
     }
 
-    // 2) find requestors
+    // 2) Find requestors
     const requestors = await User.find({ isVolunteer: false });
-    if (!requestors.length) {
+    if (requestors.length === 0) {
       return res.json({
         privateOrgs: [],
         requestorTasks: [],
@@ -36,79 +27,49 @@ router.get("/:volunteerId", async (req, res) => {
       });
     }
 
-    // 3) get all matched tasks from hugging-face approach
+    // 3) Get all matched tasks from matching service
     const allMatchedTasks = await matchingService.findMatches(volunteer, requestors);
-    /**
-     * allMatchedTasks is an array of objects:
-     *   {
-     *     requestorId,
-     *     requestorName,
-     *     taskTitle,
-     *     urgency,
-     *     specialtyRequired,
-     *     finalScore
-     *   }
-     * but we also want to pass .address
-     */
-    
-    // We'll fetch each user's address so we can show it
-    // in the final data. Alternatively, we could have matchingService
-    // store it from the get-go, but let's do it here for clarity.
-    const userMap = new Map();
-    for (const r of requestors) {
-      userMap.set(String(r._id), r);
-    }
 
-    // 4) separate final tasks into 3 arrays
+    // 4) Find all organizations
+    const organizations = await Organization.find({});
+    const matchedOrgs = await matchingService.findOrgMatches(volunteer, organizations);
+
+    // 5) Separate organizations based on name patterns
     const privateOrgs = [];
-    const requestorTasks = [];
     const governmentOrgs = [];
 
-    for (const task of allMatchedTasks) {
-      // find the user in userMap to get .address
-      const userObj = userMap.get(String(task.requestorId));
-      const address = userObj?.address || "No address provided";
-
-      // create a final “match item” that includes the address
-      const finalItem = {
-        requestorId: task.requestorId,
-        requestorName: task.requestorName,
-        address,
-        taskTitle: task.taskTitle,
-        urgency: task.urgency,
-        specialtyRequired: task.specialtyRequired,
-        finalScore: task.finalScore,
-      };
-
-      // grouping logic
-      const lowerName = task.requestorName.toLowerCase();
+    for (const org of matchedOrgs) {
+      const lowerName = org.name.toLowerCase();
       if (
         lowerName.includes("fire") ||
         lowerName.includes("lafd") ||
-        lowerName.includes("fema")
+        lowerName.includes("fema") ||
+        lowerName.includes("cert") ||
+        lowerName.includes(".gov")
       ) {
-        // Government
-        governmentOrgs.push(finalItem);
-      } else if (
-        lowerName.includes("foundation") ||
-        lowerName.includes("red cross") ||
-        lowerName.includes("army") ||
-        lowerName.includes("rubicon") ||
-        lowerName.includes("team rubicon")
-      ) {
-        // Private organizations
-        privateOrgs.push(finalItem);
+        governmentOrgs.push(org);
       } else {
-        // Everyone else => "Individual Requesters"
-        requestorTasks.push(finalItem);
+        privateOrgs.push(org);
       }
     }
 
-    return res.json({
-      privateOrgs,
-      requestorTasks,
-      governmentOrgs,
+    // 6) Sort each category by finalScore and take top 3
+    const sortAndSlice = (arr) =>
+      arr.sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+
+    const response = {
+      privateOrgs: sortAndSlice(privateOrgs),
+      requestorTasks: sortAndSlice(allMatchedTasks),
+      governmentOrgs: sortAndSlice(governmentOrgs),
+    };
+
+    console.log("Sending matched results:", {
+      privateOrgsCount: response.privateOrgs.length,
+      requestorTasksCount: response.requestorTasks.length,
+      governmentOrgsCount: response.governmentOrgs.length,
     });
+
+    return res.json(response);
   } catch (error) {
     console.error("[matchingRoutes] Error in matching route:", error);
     return res.status(500).json({ error: "Error matching tasks" });

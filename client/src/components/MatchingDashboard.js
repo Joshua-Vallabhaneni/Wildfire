@@ -1,4 +1,3 @@
-// client/src/components/MatchingDashboard.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,32 +11,24 @@ function MatchingDashboard({ volunteerId }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1) fetch matched tasks from /api/matching
         const matchRes = await fetch(`http://localhost:8080/api/matching/${volunteerId}`);
-        if (!matchRes.ok) throw new Error("Failed to fetch matched tasks");
-        const matchData = await matchRes.json();
-        const { requestorTasks: matchedRequestors = [] } = matchData;
-        setRequestorTasks(matchedRequestors);
+        if (!matchRes.ok) throw new Error("Failed to fetch matches");
+        
+        const { privateOrgs, requestorTasks, governmentOrgs } = await matchRes.json();
 
-        // 2) fetch all orgs from /api/orgs, then separate them
-        const orgRes = await fetch("http://localhost:8080/api/orgs");
-        if (!orgRes.ok) throw new Error("Failed to fetch orgs");
-        const orgData = await orgRes.json();
-        const priv = [];
-        const gov = [];
-        for (const org of orgData) {
-          const lower = org.name.toLowerCase();
-          if (lower.includes("fire") || lower.includes("lafd") || lower.includes("fema")) {
-            gov.push(org);
-          } else {
-            priv.push(org);
-          }
-        }
-        setPrivateOrgs(priv);
-        setGovernmentOrgs(gov);
+        console.log("Received matches:", {
+          privateOrgs: privateOrgs.length,
+          requestorTasks: requestorTasks.length,
+          governmentOrgs: governmentOrgs.length,
+        });
+        
+        setPrivateOrgs(privateOrgs);
+        setRequestorTasks(requestorTasks);
+        setGovernmentOrgs(governmentOrgs);
+        
       } catch (err) {
         setError(err.message);
-        console.error("Error in fetchData for MatchingDashboard:", err);
+        console.error("Error in fetchData:", err);
       } finally {
         setLoading(false);
       }
@@ -74,7 +65,12 @@ function MatchingDashboard({ volunteerId }) {
               <p style={styles.emptyText}>No matching private organizations found.</p>
             ) : (
               privateOrgs.map((org, idx) => (
-                <OrgCard key={idx} org={org} cardType="private" volunteerId={volunteerId} />
+                <OrgCard
+                  key={idx}
+                  org={org}
+                  cardType="private"
+                  volunteerId={volunteerId}
+                />
               ))
             )}
           </div>
@@ -86,7 +82,12 @@ function MatchingDashboard({ volunteerId }) {
               <p style={styles.emptyText}>No matching individual requesters found.</p>
             ) : (
               requestorTasks.map((task, idx) => (
-                <RequestorTaskCard key={idx} item={task} cardType="requester" volunteerId={volunteerId} />
+                <RequestorTaskCard
+                  key={idx}
+                  item={task}
+                  cardType="requester"
+                  volunteerId={volunteerId}
+                />
               ))
             )}
           </div>
@@ -98,7 +99,12 @@ function MatchingDashboard({ volunteerId }) {
               <p style={styles.emptyText}>No matching government organizations found.</p>
             ) : (
               governmentOrgs.map((org, idx) => (
-                <OrgCard key={idx} org={org} cardType="government" volunteerId={volunteerId} />
+                <OrgCard
+                  key={idx}
+                  org={org}
+                  cardType="government"
+                  volunteerId={volunteerId}
+                />
               ))
             )}
           </div>
@@ -114,15 +120,17 @@ function OrgCard({ org, cardType, volunteerId }) {
 
   let gradient = "linear-gradient(135deg, #f0f0f0, #ffffff)";
   let borderColor = "#ccc";
+  let scoreColor = "#333";
+
   if (cardType === "private") {
     gradient = "linear-gradient(135deg, #FFE5D4, #FFD1B8)";
     borderColor = "#FFC2A1";
+    scoreColor = "#D84315"; // Dark Orange
   } else if (cardType === "government") {
     gradient = "linear-gradient(135deg, #E7F9EC, #D9F2E2)";
     borderColor = "#ADE7C7";
+    scoreColor = "#2E7D32"; // Dark Green
   }
-
-  const arrowSymbol = expanded ? "▼" : "▶";
 
   const handleMessageClick = (e) => {
     e.stopPropagation();
@@ -159,7 +167,7 @@ function OrgCard({ org, cardType, volunteerId }) {
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.1)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)"; }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem", color: "#333" }}>
             {org.name || "Unknown Organization"}
@@ -167,11 +175,15 @@ function OrgCard({ org, cardType, volunteerId }) {
           <div style={{ fontSize: "0.85rem", color: "#777", marginBottom: "0.5rem" }}>
             {org.address || "No address provided"}
           </div>
+          <div style={{ fontSize: "0.9rem", color: scoreColor, fontWeight: 500 }}>
+            Match Score: {(org.finalScore * 100).toFixed(1)}%
+          </div>
         </div>
         <div style={{ marginLeft: "0.5rem", fontWeight: "bold", fontSize: "1.25rem", color: "#444" }}>
-          {arrowSymbol}
+          {expanded ? "▼" : "▶"}
         </div>
       </div>
+
       {expanded && (
         <div style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#333", lineHeight: "1.4" }}>
           {(org.tasksRequested || []).map((t, idx) => (
@@ -208,20 +220,37 @@ function OrgCard({ org, cardType, volunteerId }) {
             >
               💬 Message Organization
             </button>
-          </div>
-          {org.link && (
-            <div style={{ marginTop: '1rem' }}>
-              <a
-                href={org.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#0056b3", textDecoration: "none", fontWeight: "500" }}
-                onClick={(e) => e.stopPropagation()}
+            {org.link && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(org.link, "_blank");
+                }}
+                style={{
+                  padding: '0.6rem 1rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: '#28a745',
+                  color: '#fff',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#218838';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#28a745';
+                }}
               >
-                Visit Website &rarr;
-              </a>
-            </div>
-          )}
+                🌐 Visit Website
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -247,15 +276,12 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
   else if (urgency >= 5) urgencyColor = "#FB8C00";
   else urgencyColor = "#43A047";
 
-  const arrowSymbol = expanded ? "▼" : "▶";
-
   const handleMessageClick = (e) => {
     e.stopPropagation();
     
-    // Extract recipient details from item
-    const recipientId = item.requester?.id || item.requestorId || item.userId;
-    const recipientName = item.requestorName || item.requester?.name || "Unknown User";
-    
+    const recipientId = item.requestorId;
+    const recipientName = item.requestorName || "Unknown User";
+
     console.log('Opening message with:', {
       recipientId,
       recipientName,
@@ -329,9 +355,12 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
           <div style={{ fontSize: "0.85rem", color: "#777", marginBottom: "0.5rem" }}>
             {address}
           </div>
+          <div style={{ fontSize: "0.9rem", color: "#2979FF", fontWeight: 500 }}>
+            Match Score: {(finalScore * 100).toFixed(1)}%
+          </div>
         </div>
         <div style={{ marginLeft: "0.5rem", fontWeight: "bold", fontSize: "1.25rem", color: "#444" }}>
-          {arrowSymbol}
+          {expanded ? "▼" : "▶"}
         </div>
       </div>
 
@@ -346,14 +375,10 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
             <strong>Specialty Required:</strong>{" "}
             {item.specialtyRequired ? "Yes" : "No"}
           </div>
-          <div style={{ marginBottom: "0.4rem" }}>
-            <strong>Match Score:</strong>{" "}
-            {(finalScore * 100).toFixed(1)}%
-          </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-            <button 
+{/* Action Buttons */}
+<div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <button
               onClick={handleMessageClick}
               style={{
                 padding: '0.6rem 1rem',
@@ -376,7 +401,7 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
                 e.currentTarget.style.backgroundColor = '#0095F6';
               }}
             >
-              💬 Message {item.requestorName || item.requester?.name || "User"}
+              💬 Message Requester
             </button>
 
             <button
