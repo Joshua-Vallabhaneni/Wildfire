@@ -144,50 +144,85 @@ function MapView({ orgs, requestorTasks }) {
   useEffect(() => {
 async function geocodeAll() {
   setLoadingGeocode(true);
-  const results = [];
 
-  // Handle organizations first
-  for (const org of (orgs || [])) {
-    if (!org.address) continue;
+  const hardcodedLocations = [
+    // Private Organizations (Orange pins)
+    {
+      _id: 'private-1',
+      name: 'Team Rubicon',
+      address: '55 Rubicon Rd, Los Angeles, CA',
+      lat: 34.0550,
+      lng: -118.2300,
+      tasksRequested: [{
+        title: 'Rebuild Damaged Structures',
+        urgency: 8,
+        category: 'Infrastructure'
+      }]
+    },
+    {
+      _id: 'private-2',
+      name: 'The Salvation Army',
+      address: '305 Salvation St, Pasadena, CA',
+      lat: 34.0700,
+      lng: -118.2400,
+      tasksRequested: [{
+        title: 'Operate Mobile Kitchen',
+        urgency: 6,
+        category: 'Emergency Response'
+      }]
+    },
+    {
+      _id: 'private-3',
+      name: 'American Red Cross',
+      address: '123 LA Road, Los Angeles, CA',
+      lat: 34.0650,
+      lng: -118.2350,
+      tasksRequested: [{
+        title: 'Distribute Relief Supplies',
+        urgency: 7,
+        category: 'Emergency Response'
+      }]
+    },
 
-    let lat = null;
-    let lng = null;
+    // Government Organizations (Green pins)
+    {
+      _id: 'gov-1',
+      name: 'LA Fire Department Foundation',
+      address: '200 N Main St, Los Angeles, CA',
+      lat: 34.0550,
+      lng: -118.2450,
+      tasksRequested: [{
+        title: 'Fire Safety Workshops',
+        urgency: 8,
+        category: 'Safety and Prevention'
+      }]
+    },
+    {
+      _id: 'gov-2',
+      name: 'LAFD Station',
+      address: '300 San Fernando Rd, Los Angeles, CA',
+      lat: 34.0600,
+      lng: -118.2400,
+      tasksRequested: [{
+        title: 'Equipment Maintenance',
+        urgency: 9,
+        category: 'Infrastructure'
+      }]
+    },
+    {
+      _id: 'gov-3',
+      name: 'Cal Volunteers Wildfire Recovery',
+      address: 'Sacramento, CA',
+      lat: 34.0500,
+      lng: -118.2350,
+      tasksRequested: [{
+        title: 'Restore Forested Areas',
+        urgency: 7,
+        category: 'Sustainability'
+      }]
+    },
 
-    if (org.address.toLowerCase().includes("virtual") || 
-        org.address.toLowerCase().includes("nationwide")) {
-      lat = 34.05 + Math.random() * 0.1;
-      lng = -118.24 + Math.random() * 0.1;
-    } else {
-      const encoded = encodeURIComponent(org.address);
-      try {
-        const resp = await fetch(
-          `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encoded}`
-        );
-        const data = await resp.json();
-        if (data.features && data.features.length > 0) {
-          const [lngFound, latFound] = data.features[0].geometry.coordinates;
-          lat = latFound;
-          lng = lngFound;
-        } else {
-          lat = 34.05 + Math.random() * 0.1;
-          lng = -118.24 + Math.random() * 0.1;
-        }
-      } catch (err) {
-        console.error("Geocode error for organization:", org.address, err);
-        lat = 34.05 + Math.random() * 0.1;
-        lng = -118.24 + Math.random() * 0.1;
-      }
-    }
-
-    results.push({
-      ...org,
-      lat,
-      lng
-    });
-  }
-
-  // Hardcoded requestor tasks (around LA area)
-  const hardcodedRequestors = [
+    // Individual Requestors (Purple pins)
     {
       isRequestor: true,
       _id: 'req-1',
@@ -229,11 +264,7 @@ async function geocodeAll() {
     }
   ];
 
-  // Add hardcoded requestors to results
-  results.push(...hardcodedRequestors);
-
-  console.log("Final results including hardcoded requestors:", results);
-  setGeocodedOrgs(results);
+  setGeocodedOrgs(hardcodedLocations);
   setLoadingGeocode(false);
 }
 
