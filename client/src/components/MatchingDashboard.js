@@ -4,36 +4,105 @@ import { useNavigate } from "react-router-dom";
 function MatchingDashboard({ volunteerId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [privateOrgs, setPrivateOrgs] = useState([]);
-  const [governmentOrgs, setGovernmentOrgs] = useState([]);
-  const [requestorTasks, setRequestorTasks] = useState([]);
+  const [allMatches, setAllMatches] = useState({
+    privateOrgs: [],
+    governmentOrgs: [],
+    requestorTasks: []
+  });
+  const [displayedMatches, setDisplayedMatches] = useState({
+    privateOrgs: [],
+    governmentOrgs: [],
+    requestorTasks: []
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+  const ITEMS_PER_PAGE = 3;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const matchRes = await fetch(`http://localhost:8080/api/matching/${volunteerId}`);
-        if (!matchRes.ok) throw new Error("Failed to fetch matches");
-        
-        const { privateOrgs, requestorTasks, governmentOrgs } = await matchRes.json();
-        
-        setPrivateOrgs(privateOrgs);
-        setRequestorTasks(requestorTasks);
-        setGovernmentOrgs(governmentOrgs);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error in fetchData:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [volunteerId]);
+
+  const fetchData = async () => {
+    try {
+      const cachedData = localStorage.getItem(`matches_${volunteerId}`);
+      const cachedTimestamp = localStorage.getItem(`matches_timestamp_${volunteerId}`);
+      
+      if (!refreshing && cachedData && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp);
+        if (age < 30 * 60 * 1000) {
+          const data = JSON.parse(cachedData);
+          setAllMatches(data);
+          updateDisplayedMatches(data, 1);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const matchRes = await fetch(
+        `http://localhost:8080/api/matching/${volunteerId}`,
+        {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+
+      if (!matchRes.ok) throw new Error("Failed to fetch matches");
+      
+      const data = await matchRes.json();
+      
+      const sortedData = {
+        privateOrgs: data.privateOrgs.sort((a, b) => b.finalScore - a.finalScore),
+        requestorTasks: data.requestorTasks.sort((a, b) => b.finalScore - a.finalScore),
+        governmentOrgs: data.governmentOrgs.sort((a, b) => b.finalScore - a.finalScore)
+      };
+
+      localStorage.setItem(`matches_${volunteerId}`, JSON.stringify(sortedData));
+      localStorage.setItem(`matches_timestamp_${volunteerId}`, Date.now().toString());
+      
+      setAllMatches(sortedData);
+      updateDisplayedMatches(sortedData, 1);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error in fetchData:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const updateDisplayedMatches = (matches, page) => {
+    const startIdx = (page - 1) * ITEMS_PER_PAGE;
+    const endIdx = startIdx + ITEMS_PER_PAGE;
+
+    setDisplayedMatches({
+      privateOrgs: matches.privateOrgs.slice(startIdx, endIdx),
+      requestorTasks: matches.requestorTasks.slice(startIdx, endIdx),
+      governmentOrgs: matches.governmentOrgs.slice(startIdx, endIdx)
+    });
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    const nextPage = currentPage + 1;
+    
+    const hasMoreItems = ['privateOrgs', 'requestorTasks', 'governmentOrgs'].some(category => {
+      const startIdx = nextPage * ITEMS_PER_PAGE;
+      return allMatches[category].length > startIdx;
+    });
+
+    const newPage = hasMoreItems ? nextPage : 1;
+    setCurrentPage(newPage);
+    updateDisplayedMatches(allMatches, newPage);
+    setRefreshing(false);
+  };
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.loadingText}>Loading matches...</div>
+        <div style={styles.spinner}></div>
       </div>
     );
   }
@@ -49,25 +118,34 @@ function MatchingDashboard({ volunteerId }) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.heading}>Your Matched Opportunities</h1>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.heading}>Your Matched Opportunities</h1>
+          <button 
+            onClick={handleRefresh} 
+            style={styles.refreshButton}
+            disabled={refreshing}
+          >
+            {refreshing ? 'Loading...' : '🔄 Next Matches'}
+          </button>
+        </div>
         <div style={styles.horizontalLayout}>
           <Column
             title="Private Organizations"
-            items={privateOrgs}
+            items={displayedMatches.privateOrgs}
             type="private"
             CardComponent={OrgCard}
             volunteerId={volunteerId}
           />
           <Column
             title="Individual Requesters"
-            items={requestorTasks}
+            items={displayedMatches.requestorTasks}
             type="requester"
             CardComponent={RequestorTaskCard}
             volunteerId={volunteerId}
           />
           <Column
             title="Government Organizations"
-            items={governmentOrgs}
+            items={displayedMatches.governmentOrgs}
             type="government"
             CardComponent={OrgCard}
             volunteerId={volunteerId}
@@ -342,12 +420,39 @@ const styles = {
     padding: '2rem',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem',
+    paddingRight: '1rem',
+  },
   heading: {
     fontSize: '2rem',
     fontWeight: '700',
     color: '#333',
-    textAlign: 'center',
-    marginBottom: '2rem',
+    margin: 0,
+  },
+  refreshButton: {
+    padding: '0.75rem 1.5rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#3498db',
+    color: 'white',
+    fontSize: '1rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    '&:hover': {
+      backgroundColor: '#2980b9',
+    },
+    '&:disabled': {
+      backgroundColor: '#bdc3c7',
+      cursor: 'not-allowed',
+    },
   },
   horizontalLayout: {
     display: 'flex',
@@ -481,7 +586,7 @@ const styles = {
   fileInput: {
     marginBottom: '1rem',
   },
-      cancelButton: {
+  cancelButton: {
     padding: '0.5rem 1rem',
     borderRadius: '8px',
     border: 'none',
@@ -492,10 +597,24 @@ const styles = {
   loadingContainer: {
     textAlign: 'center',
     marginTop: '3rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '200px',
   },
   loadingText: {
     fontSize: '1.25rem',
     color: '#666',
+    marginBottom: '1rem',
+  },
+  spinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #3498db',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
   },
   errorBox: {
     maxWidth: '600px',
@@ -517,5 +636,15 @@ const styles = {
     fontStyle: 'italic',
   },
 };
+
+// Add the animation to the document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default MatchingDashboard;

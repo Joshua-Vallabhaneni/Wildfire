@@ -9,12 +9,39 @@ class MatchingService {
       apiKey: process.env.OPENAI_API_KEY,
     });
     this.openai = new OpenAIApi(configuration);
+    this.matchCache = new Map(); // Cache for storing matches
+    this.similarityCache = new Map(); // Cache for storing similarity scores
+    this.cacheTimeout = 30 * 60 * 1000; // 30 minutes cache timeout
+  }
+
+  getCachedMatches(volunteerId) {
+    const cached = this.matchCache.get(volunteerId);
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log(`[getCachedMatches] Cache hit for volunteer ${volunteerId}`);
+      return cached.data;
+    }
+    console.log(`[getCachedMatches] Cache miss for volunteer ${volunteerId}`);
+    return null;
+  }
+
+  setCachedMatches(volunteerId, matches) {
+    console.log(`[setCachedMatches] Caching matches for volunteer ${volunteerId}`);
+    this.matchCache.set(volunteerId, {
+      data: matches,
+      timestamp: Date.now()
+    });
   }
 
   async calculateTaskSimilarity(textA, textB) {
-    console.log(
-      `\n[calculateTaskSimilarity] Comparing:\n  A: "${textA}"\n  B: "${textB}"\n`
-    );
+    const cacheKey = `${textA}|${textB}`;
+    const cachedSimilarity = this.similarityCache.get(cacheKey);
+    
+    if (cachedSimilarity !== undefined) {
+      console.log(`[calculateTaskSimilarity] Using cached similarity for "${textA}" and "${textB}"`);
+      return cachedSimilarity;
+    }
+
+    console.log(`[calculateTaskSimilarity] Comparing:\n  A: "${textA}"\n  B: "${textB}"\n`);
 
     try {
       const prompt = `
@@ -39,10 +66,13 @@ Score:`;
 
       if (isNaN(similarity) || similarity < 0 || similarity > 1) {
         console.warn(`[calculateTaskSimilarity] Invalid score from OpenAI: ${response.data.choices[0].message.content}. Using fallback.`);
-        return this.wordOverlapSimilarity(textA, textB);
+        const fallback = this.wordOverlapSimilarity(textA, textB);
+        this.similarityCache.set(cacheKey, fallback);
+        return fallback;
       }
 
       console.log(`[calculateTaskSimilarity] GPT similarity score: ${similarity.toFixed(3)}`);
+      this.similarityCache.set(cacheKey, similarity);
       return similarity;
 
     } catch (error) {
@@ -51,7 +81,7 @@ Score:`;
         error?.response?.data || error
       );
       const fallback = this.wordOverlapSimilarity(textA, textB);
-      console.log(`[calculateTaskSimilarity] Fallback score: ${fallback.toFixed(3)}`);
+      this.similarityCache.set(cacheKey, fallback);
       return fallback;
     }
   }
@@ -99,16 +129,23 @@ Score:`;
   }
 
   async findMatches(volunteer, requestors) {
+    // Check cache first
+    const cachedMatches = this.getCachedMatches(volunteer._id);
+    if (cachedMatches) {
+      console.log(`[findMatches] Returning cached matches for volunteer ${volunteer._id}`);
+      return cachedMatches;
+    }
+
     console.log("[findMatches] Starting volunteer-requestor matching");
 
     const volunteerHasSpecialty = volunteer.tasksWilling.some((skill) =>
       /certified|professional|specialist/i.test(skill.title)
     );
 
-    const allMatches = [];
-
-    for (const req of requestors) {
+    // Process requestors in parallel for better performance
+    const matchPromises = requestors.map(async (req) => {
       const reqAvail = req.availability || {};
+      const matches = [];
 
       for (const reqTask of req.tasksRequested || []) {
         const urgencyVal = (reqTask.urgency || 0) / 10;
@@ -117,91 +154,135 @@ Score:`;
           reqAvail
         );
 
-        let bestScore = 0;
+        // Process volunteer skills in parallel
+        const skillScores = await Promise.all(
+          (volunteer.tasksWilling || []).map(async (volSkill) => {
+            const similarity = await this.calculateTaskSimilarity(
+              volSkill.title,
+              reqTask.title
+            );
 
-        for (const volSkill of volunteer.tasksWilling || []) {
-          const similarity = await this.calculateTaskSimilarity(
-            volSkill.title,
-            reqTask.title
-          );
+            return this.calculateMatchScore(
+              similarity,
+              urgencyVal,
+              overlapVal,
+              reqTask.specialtyRequired,
+              volunteerHasSpecialty
+            );
+          })
+        );
 
-          const finalScore = this.calculateMatchScore(
-            similarity,
-            urgencyVal,
-            overlapVal,
-            reqTask.specialtyRequired,
-            volunteerHasSpecialty
-          );
+        const bestScore = Math.max(...skillScores, 0);
 
-          if (finalScore > bestScore) {
-            bestScore = finalScore;
-          }
+        if (bestScore > 0) {
+          matches.push({
+            requestorId: req._id,
+            requestorName: req.name,
+            address: req.address || "No address provided",
+            taskTitle: reqTask.title,
+            urgency: reqTask.urgency,
+            specialtyRequired: reqTask.specialtyRequired,
+            finalScore: bestScore,
+          });
         }
-
-        allMatches.push({
-          requestorId: req._id,
-          requestorName: req.name,
-          address: req.address || "No address provided",
-          taskTitle: reqTask.title,
-          urgency: reqTask.urgency,
-          specialtyRequired: reqTask.specialtyRequired,
-          finalScore: bestScore,
-        });
       }
-    }
 
+      return matches;
+    });
+
+    const allMatchArrays = await Promise.all(matchPromises);
+    const allMatches = allMatchArrays.flat();
+
+    // Sort matches by score in descending order
+    allMatches.sort((a, b) => b.finalScore - a.finalScore);
+
+    // Cache the results
+    this.setCachedMatches(volunteer._id, allMatches);
     return allMatches;
   }
 
   async findOrgMatches(volunteer, organizations) {
+    // Check cache first
+    const cacheKey = `${volunteer._id}_orgs`;
+    const cachedMatches = this.getCachedMatches(cacheKey);
+    if (cachedMatches) {
+      console.log(`[findOrgMatches] Returning cached matches for volunteer ${volunteer._id}`);
+      return cachedMatches;
+    }
+
     console.log("[findOrgMatches] Starting organization matching");
 
     const volunteerHasSpecialty = volunteer.tasksWilling.some((skill) =>
       /certified|professional|specialist/i.test(skill.title)
     );
 
-    const matchedOrgs = [];
-
-    for (const org of organizations) {
-      let bestOrgScore = 0;
+    // Process organizations in parallel
+    const matchPromises = organizations.map(async (org) => {
       const reqAvail = org.availability || {};
       const overlapVal = this.computeAvailabilityOverlap(
         volunteer.availability,
         reqAvail
       );
 
-      for (const orgTask of org.tasksRequested || []) {
-        const urgencyVal = (orgTask.urgency || 0) / 10;
+      let bestOrgScore = 0;
 
-        for (const volSkill of volunteer.tasksWilling || []) {
-          const similarity = await this.calculateTaskSimilarity(
-            volSkill.title,
-            orgTask.title
+      // Process organization tasks in parallel
+      const taskScores = await Promise.all(
+        (org.tasksRequested || []).map(async (orgTask) => {
+          const urgencyVal = (orgTask.urgency || 0) / 10;
+
+          // Process volunteer skills in parallel
+          const skillScores = await Promise.all(
+            (volunteer.tasksWilling || []).map(async (volSkill) => {
+              const similarity = await this.calculateTaskSimilarity(
+                volSkill.title,
+                orgTask.title
+              );
+
+              return this.calculateMatchScore(
+                similarity,
+                urgencyVal,
+                overlapVal,
+                orgTask.specialtyRequired,
+                volunteerHasSpecialty
+              );
+            })
           );
 
-          const finalScore = this.calculateMatchScore(
-            similarity,
-            urgencyVal,
-            overlapVal,
-            orgTask.specialtyRequired,
-            volunteerHasSpecialty
-          );
+          return Math.max(...skillScores, 0);
+        })
+      );
 
-          if (finalScore > bestOrgScore) {
-            bestOrgScore = finalScore;
-          }
-        }
-      }
+      bestOrgScore = Math.max(...taskScores, 0);
 
       if (bestOrgScore > 0) {
-        matchedOrgs.push({
+        return {
           ...org.toObject(),
           finalScore: bestOrgScore,
-        });
+        };
       }
-    }
+      return null;
+    });
 
+    const matchedOrgs = (await Promise.all(matchPromises))
+      .filter(Boolean)
+      .sort((a, b) => b.finalScore - a.finalScore);
+
+    // Cache the results
+    this.setCachedMatches(cacheKey, matchedOrgs);
     return matchedOrgs;
+  }
+
+  clearCache(volunteerId) {
+    if (volunteerId) {
+      this.matchCache.delete(volunteerId);
+      this.matchCache.delete(`${volunteerId}_orgs`);
+      console.log(`[clearCache] Cleared cache for volunteer ${volunteerId}`);
+    } else {
+      this.matchCache.clear();
+      this.similarityCache.clear();
+      console.log('[clearCache] Cleared all caches');
+    }
   }
 }
 
