@@ -1,253 +1,387 @@
 // client/src/components/MapView.js
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
-const blueIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-const redIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const mapStyles = {
-  container: {
-    position: 'relative',
-    height: '100vh',
-    width: '100%',
-  },
-  mapContainer: {
-    height: '100%',
-    width: '100%',
-    zIndex: 1,
-  },
-  toggleButton: {
-    position: 'absolute',
-    top: '20px',
-    right: '20px',
-    zIndex: 1000,
-    padding: '12px 24px',
-    backgroundColor: '#FF9800',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    transition: 'all 0.3s ease',
-    fontWeight: '600',
-  },
-  popup: {
-    margin: '0',
-    padding: '10px',
-  },
-  popupTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#FF9800',
-    marginBottom: '8px',
-  },
-  popupAddress: {
-    fontSize: '14px',
-    color: '#666',
-    marginBottom: '8px',
-  },
-  popupDistance: {
-    fontSize: '14px',
-    color: '#666',
-    marginBottom: '12px',
-  },
-  popupTasks: {
-    marginTop: '8px',
-  },
-  popupTaskTitle: {
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: '8px',
-  },
-  taskItem: {
-    fontSize: '14px',
-    color: '#666',
-    padding: '4px 0'
-  }
+const containerStyles = {
+  position: "relative",
+  width: "100%",
+  height: "100vh",
+  background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)",
+  overflow: "hidden",
 };
 
-function MapView({ orgs, userLocation, setView, view }) {
-  const [distances, setDistances] = useState({});
-  const LACenter = [34.0522, -118.2437];
-  const zoomLevel = 10;
+const mapStyle = {
+  height: "100%",
+  width: "100%",
+};
 
-  // Filter out virtual/nationwide organizations
-  const physicalOrgs = orgs.filter(org => 
-    !org.address.toLowerCase().includes('virtual') && 
-    !org.address.toLowerCase().includes('nationwide')
-  );
+/** 
+ * Marker icons 
+ * - userIcon (blue) => your location
+ * - governmentIcon (green) => if org is "gov"
+ * - privateIcon (orange) => if org is "private"
+ * - requestorIcon (violet) => if org is "individual requestor"
+ */
+const userIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
+const governmentIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const privateIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const requestorIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+/** 
+ * Haversine formula => miles 
+ */
+function getDistanceInMiles(lat1, lon1, lat2, lon2) {
+  const R = 3959; // Earth radius in miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1);
+}
+
+/** 
+ * Decide icon => 
+ *   if org.isRequestor is explicitly true => requestorIcon
+ *   else if org has "fire" or similar in name => governmentIcon 
+ *   else => privateIcon
+ */
+function getOrgIcon(org) {
+  // Explicitly check for requestor marker first
+  if (org.isRequestor === true) {  // Changed from truthy check to strict true check
+    return requestorIcon;
+  }
+  
+  const lowerName = (org.name || "").toLowerCase();
+  if (lowerName.includes("fire") || lowerName.includes("lafd") || lowerName.includes("fema")) {
+    return governmentIcon;
+  }
+  
+  return privateIcon;
+}
+
+const popupStyles = {
+  title: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#FF4500",
+    marginBottom: "6px",
+  },
+  address: {
+    fontSize: "14px",
+    color: "#555",
+    marginBottom: "4px",
+  },
+  distance: {
+    fontSize: "14px",
+    color: "#666",
+    marginBottom: "6px",
+  },
+  tasks: {
+    marginTop: "6px",
+  },
+  taskTitle: {
+    fontSize: "14px",
+    fontWeight: "bold",
+    marginBottom: "4px",
+  },
+  taskItem: {
+    fontSize: "14px",
+    color: "#666",
+    padding: "2px 0",
+  },
+};
+
+function MapView({ orgs }) {
+  const [userLocation, setUserLocation] = useState(null);
+  const [geocodedOrgs, setGeocodedOrgs] = useState([]);
+  const [loadingGeocode, setLoadingGeocode] = useState(true);
+
+  // 1) Get user location
   useEffect(() => {
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
-      const R = 3959; // Earth's radius in miles
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return (R * c).toFixed(1);
-    };
-
-    const geocodeAndCalculateDistances = async () => {
-      if (!userLocation) return;
-
-      const updatedDistances = {};
-
-      for (const org of physicalOrgs) {
-        try {
-          const encodedAddress = encodeURIComponent(org.address);
-          const response = await fetch(
-            `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encodedAddress}`
-          );
-          const data = await response.json();
-          
-          if (data.features && data.features[0]) {
-            const [lng, lat] = data.features[0].geometry.coordinates;
-            const distance = calculateDistance(
-              userLocation.lat,
-              userLocation.lng,
-              lat,
-              lng
-            );
-            updatedDistances[org._id] = distance;
-          }
-        } catch (error) {
-          console.error('Geocoding error:', error);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          console.warn("Geolocation error => fallback LA");
+          setUserLocation({ lat: 34.0522, lng: -118.2437 });
         }
+      );
+    } else {
+      // fallback LA
+      setUserLocation({ lat: 34.0522, lng: -118.2437 });
+    }
+  }, []);
+
+  // 2) Geocode org addresses => store lat/lng
+  useEffect(() => {
+    if (!orgs || orgs.length === 0) {
+      setGeocodedOrgs([]);
+      setLoadingGeocode(false);
+      return;
+    }
+
+    async function geocodeAll() {
+      setLoadingGeocode(true);
+      const results = [];
+
+      for (const org of orgs) {
+        if (!org.address) {
+          continue;
+        }
+
+        let lat = null;
+        let lng = null;
+
+        // if org.address includes "virtual" => fallback random LA
+        if (
+          org.address.toLowerCase().includes("virtual") ||
+          org.address.toLowerCase().includes("nationwide")
+        ) {
+          lat = 34.05 + Math.random() * 0.1;
+          lng = -118.24 + Math.random() * 0.1;
+        } else {
+          // geocode
+          const encoded = encodeURIComponent(org.address);
+          try {
+            const resp = await fetch(
+              `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encoded}`
+            );
+            const data = await resp.json();
+            if (data.features && data.features.length > 0) {
+              const [lngFound, latFound] = data.features[0].geometry.coordinates;
+              lat = latFound;
+              lng = lngFound;
+            } else {
+              // fallback random
+              lat = 34.05 + Math.random() * 0.1;
+              lng = -118.24 + Math.random() * 0.1;
+            }
+          } catch (err) {
+            console.error("Geocode error for:", org.address, err);
+            // fallback random
+            lat = 34.05 + Math.random() * 0.1;
+            lng = -118.24 + Math.random() * 0.1;
+          }
+        }
+
+        results.push({
+          ...org,
+          lat,
+          lng,
+        });
       }
 
-      setDistances(updatedDistances);
-    };
+      setGeocodedOrgs(results);
+      setLoadingGeocode(false);
+    }
 
-    geocodeAndCalculateDistances();
-  }, [physicalOrgs, userLocation]);
+    geocodeAll();
+  }, [orgs]);
+
+  // 3) Decide map center
+  let mapCenter = [34.0522, -118.2437];
+  if (userLocation) {
+    mapCenter = [userLocation.lat, userLocation.lng];
+  }
+  const zoomLevel = 10;
+
+  if (loadingGeocode) {
+    return (
+      <div style={containerStyles}>
+        <p style={{ color: "#fff", textAlign: "center", marginTop: "2rem" }}>
+          Loading map data...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div style={mapStyles.container}>
-      {/* <button
-        style={mapStyles.toggleButton}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#F57C00';
-          e.target.style.transform = 'translateY(-1px)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = '#FF9800';
-          e.target.style.transform = 'translateY(0)';
-        }}
-        onClick={() => setView(view === 'map' ? 'list' : 'map')}
-      >
-        Switch to {view === 'map' ? 'List' : 'Map'} View
-      </button> */}
-
-      <MapContainer 
-        center={LACenter}
-        zoom={zoomLevel} 
-        style={mapStyles.mapContainer}
-      >
+    <div style={containerStyles}>
+      <MapContainer center={mapCenter} zoom={zoomLevel} style={mapStyle}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        {/* User marker if location known */}
         {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={blueIcon}>
+          <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
             <Popup>
-              <div style={mapStyles.popup}>
-                <div style={mapStyles.popupTitle}>Your Location</div>
-              </div>
+              <div style={popupStyles.title}>You Are Here</div>
             </Popup>
           </Marker>
         )}
 
-        {physicalOrgs.map((org) => (
-          <Marker
-            key={org._id || Math.random()}
-            position={[
-              34.05 + Math.random() * 0.1,
-              -118.24 + Math.random() * 0.1,
-            ]}
-            icon={redIcon}
-          >
-            <Popup>
-              <div style={mapStyles.popup}>
-                <div style={mapStyles.popupTitle}>{org.name}</div>
-                <div style={mapStyles.popupAddress}>{org.address}</div>
-                {distances[org._id] && (
-                  <div style={mapStyles.popupDistance}>
-                    {distances[org._id]} miles away
-                  </div>
-                )}
-                <div style={mapStyles.popupTasks}>
-                  <div style={mapStyles.popupTaskTitle}>Tasks Available:</div>
-                  {org.tasksRequested.map((task, i) => (
-                    <div key={i} style={mapStyles.taskItem}>
-                      {task.title} (Urgency: {task.urgency}/10)
+        {/* Orgs */}
+        {geocodedOrgs.map((org) => {
+          const distStr = userLocation
+            ? getDistanceInMiles(userLocation.lat, userLocation.lng, org.lat, org.lng)
+            : null;
+
+          return (
+            <Marker key={org._id || org.name} position={[org.lat, org.lng]} icon={getOrgIcon(org)}>
+              <Popup>
+                <div>
+                  <div style={popupStyles.title}>{org.name}</div>
+                  <div style={popupStyles.address}>{org.address}</div>
+                  {distStr && (
+                    <div style={popupStyles.distance}>{distStr} miles away</div>
+                  )}
+
+                  {org.tasksRequested && org.tasksRequested.length > 0 && (
+                    <div style={popupStyles.tasks}>
+                      <div style={popupStyles.taskTitle}>Tasks Available:</div>
+                      {org.tasksRequested.map((task, idx) => (
+                        <div key={idx} style={popupStyles.taskItem}>
+                          {task.title} (Urgency: {task.urgency}/10)
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                {org.link && (
-                  <div style={{
-                    marginTop: '12px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid #eee'
-                  }}>
-                    <a
-                      href={org.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  )}
+
+                  {org.link && (
+                    <div
                       style={{
-                        color: '#FF9800',
-                        textDecoration: 'none',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
+                        marginTop: "12px",
+                        paddingTop: "12px",
+                        borderTop: "1px solid #eee",
                       }}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      Visit Website 
-                      <svg 
-                        width="14" 
-                        height="14" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
+                      <a
+                        href={org.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "#FF4500",
+                          textDecoration: "none",
+                          fontSize: "14px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </a>
-                  </div>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+                        Visit Website
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
+
+      {/* Legend */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "10px",
+          left: "10px",
+          backgroundColor: "rgba(255, 255, 255, 0.85)",
+          padding: "8px 12px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+          fontSize: "0.9rem",
+          lineHeight: "1.4",
+          zIndex: 9999,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+          <img
+            src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png"
+            alt="user"
+            style={{ width: "16px", height: "26px", marginRight: "6px" }}
+          />
+          You
+        </div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+          <img
+            src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
+            alt="gov"
+            style={{ width: "16px", height: "26px", marginRight: "6px" }}
+          />
+          Government
+        </div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+          <img
+            src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png"
+            alt="private"
+            style={{ width: "16px", height: "26px", marginRight: "6px" }}
+          />
+          Private
+        </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <img
+            src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png"
+            alt="requestor"
+            style={{ width: "16px", height: "26px", marginRight: "6px" }}
+          />
+          Requestor
+        </div>
+      </div>
     </div>
   );
 }
