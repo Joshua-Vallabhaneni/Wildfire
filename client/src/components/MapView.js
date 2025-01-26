@@ -1,5 +1,3 @@
-// client/src/components/MapView.js
-
 import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -20,16 +18,10 @@ const mapStyle = {
 
 /** 
  * Marker icons 
- * - userIcon (blue) => your location
- * - governmentIcon (green) => if org is "gov"
- * - privateIcon (orange) => if org is "private"
- * - requestorIcon (violet) => if org is "individual requestor"
  */
 const userIcon = L.icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -37,10 +29,8 @@ const userIcon = L.icon({
 });
 
 const governmentIcon = L.icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -48,10 +38,8 @@ const governmentIcon = L.icon({
 });
 
 const privateIcon = L.icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -59,19 +47,14 @@ const privateIcon = L.icon({
 });
 
 const requestorIcon = L.icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
 
-/** 
- * Haversine formula => miles 
- */
 function getDistanceInMiles(lat1, lon1, lat2, lon2) {
   const R = 3959; // Earth radius in miles
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -85,25 +68,23 @@ function getDistanceInMiles(lat1, lon1, lat2, lon2) {
   return (R * c).toFixed(1);
 }
 
-/** 
- * Decide icon => 
- *   if org.isRequestor is explicitly true => requestorIcon
- *   else if org has "fire" or similar in name => governmentIcon 
- *   else => privateIcon
- */
 function getOrgIcon(org) {
-  // Explicitly check for requestor marker first
-  if (org.isRequestor === true) {  // Changed from truthy check to strict true check
+  console.log("Getting icon for org:", org);
+  if (org.isRequestor === true) {
+    console.log("Using requestor icon");
     return requestorIcon;
   }
   
   const lowerName = (org.name || "").toLowerCase();
   if (lowerName.includes("fire") || lowerName.includes("lafd") || lowerName.includes("fema")) {
+    console.log("Using government icon");
     return governmentIcon;
   }
   
+  console.log("Using private icon");
   return privateIcon;
 }
+
 
 const popupStyles = {
   title: {
@@ -137,12 +118,12 @@ const popupStyles = {
   },
 };
 
-function MapView({ orgs }) {
+function MapView({ orgs, requestorTasks }) {
   const [userLocation, setUserLocation] = useState(null);
   const [geocodedOrgs, setGeocodedOrgs] = useState([]);
   const [loadingGeocode, setLoadingGeocode] = useState(true);
 
-  // 1) Get user location
+  // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -155,78 +136,110 @@ function MapView({ orgs }) {
         }
       );
     } else {
-      // fallback LA
       setUserLocation({ lat: 34.0522, lng: -118.2437 });
     }
   }, []);
 
-  // 2) Geocode org addresses => store lat/lng
+  // Geocode addresses
   useEffect(() => {
-    if (!orgs || orgs.length === 0) {
-      setGeocodedOrgs([]);
-      setLoadingGeocode(false);
-      return;
-    }
+async function geocodeAll() {
+  setLoadingGeocode(true);
+  const results = [];
 
-    async function geocodeAll() {
-      setLoadingGeocode(true);
-      const results = [];
+  // Handle organizations first
+  for (const org of (orgs || [])) {
+    if (!org.address) continue;
 
-      for (const org of orgs) {
-        if (!org.address) {
-          continue;
-        }
+    let lat = null;
+    let lng = null;
 
-        let lat = null;
-        let lng = null;
-
-        // if org.address includes "virtual" => fallback random LA
-        if (
-          org.address.toLowerCase().includes("virtual") ||
-          org.address.toLowerCase().includes("nationwide")
-        ) {
+    if (org.address.toLowerCase().includes("virtual") || 
+        org.address.toLowerCase().includes("nationwide")) {
+      lat = 34.05 + Math.random() * 0.1;
+      lng = -118.24 + Math.random() * 0.1;
+    } else {
+      const encoded = encodeURIComponent(org.address);
+      try {
+        const resp = await fetch(
+          `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encoded}`
+        );
+        const data = await resp.json();
+        if (data.features && data.features.length > 0) {
+          const [lngFound, latFound] = data.features[0].geometry.coordinates;
+          lat = latFound;
+          lng = lngFound;
+        } else {
           lat = 34.05 + Math.random() * 0.1;
           lng = -118.24 + Math.random() * 0.1;
-        } else {
-          // geocode
-          const encoded = encodeURIComponent(org.address);
-          try {
-            const resp = await fetch(
-              `https://api.openrouteservice.org/geocode/search?api_key=5b3ce3597851110001cf62487b6a99d2d000446a95d1308087fb1056&text=${encoded}`
-            );
-            const data = await resp.json();
-            if (data.features && data.features.length > 0) {
-              const [lngFound, latFound] = data.features[0].geometry.coordinates;
-              lat = latFound;
-              lng = lngFound;
-            } else {
-              // fallback random
-              lat = 34.05 + Math.random() * 0.1;
-              lng = -118.24 + Math.random() * 0.1;
-            }
-          } catch (err) {
-            console.error("Geocode error for:", org.address, err);
-            // fallback random
-            lat = 34.05 + Math.random() * 0.1;
-            lng = -118.24 + Math.random() * 0.1;
-          }
         }
-
-        results.push({
-          ...org,
-          lat,
-          lng,
-        });
+      } catch (err) {
+        console.error("Geocode error for organization:", org.address, err);
+        lat = 34.05 + Math.random() * 0.1;
+        lng = -118.24 + Math.random() * 0.1;
       }
-
-      setGeocodedOrgs(results);
-      setLoadingGeocode(false);
     }
 
-    geocodeAll();
-  }, [orgs]);
+    results.push({
+      ...org,
+      lat,
+      lng
+    });
+  }
 
-  // 3) Decide map center
+  // Hardcoded requestor tasks (around LA area)
+  const hardcodedRequestors = [
+    {
+      isRequestor: true,
+      _id: 'req-1',
+      name: 'Linda Chang',
+      address: '567 Ocean View Rd, Ventura, CA',
+      lat: 34.0611,
+      lng: -118.2351,
+      tasksRequested: [{
+        title: 'Replant Garden Area',
+        urgency: 5,
+        category: 'Sustainability'
+      }]
+    },
+    {
+      isRequestor: true,
+      _id: 'req-2',
+      name: 'Mike Rodriguez',
+      address: '123 Glendale Ave, Los Angeles, CA',
+      lat: 34.0477,
+      lng: -118.2425,
+      tasksRequested: [{
+        title: 'Clear Debris',
+        urgency: 7,
+        category: 'Infrastructure'
+      }]
+    },
+    {
+      isRequestor: true,
+      _id: 'req-3',
+      name: 'Sarah Kim',
+      address: '789 Highland Park, Los Angeles, CA',
+      lat: 34.0522,
+      lng: -118.2437,
+      tasksRequested: [{
+        title: 'Community Garden Setup',
+        urgency: 6,
+        category: 'Sustainability'
+      }]
+    }
+  ];
+
+  // Add hardcoded requestors to results
+  results.push(...hardcodedRequestors);
+
+  console.log("Final results including hardcoded requestors:", results);
+  setGeocodedOrgs(results);
+  setLoadingGeocode(false);
+}
+
+    geocodeAll();
+  }, [orgs, requestorTasks]);
+
   let mapCenter = [34.0522, -118.2437];
   if (userLocation) {
     mapCenter = [userLocation.lat, userLocation.lng];
@@ -251,7 +264,6 @@ function MapView({ orgs }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* User marker if location known */}
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
             <Popup>
@@ -260,7 +272,6 @@ function MapView({ orgs }) {
           </Marker>
         )}
 
-        {/* Orgs */}
         {geocodedOrgs.map((org) => {
           const distStr = userLocation
             ? getDistanceInMiles(userLocation.lat, userLocation.lng, org.lat, org.lng)
@@ -288,13 +299,11 @@ function MapView({ orgs }) {
                   )}
 
                   {org.link && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        paddingTop: "12px",
-                        borderTop: "1px solid #eee",
-                      }}
-                    >
+                    <div style={{
+                      marginTop: "12px",
+                      paddingTop: "12px",
+                      borderTop: "1px solid #eee",
+                    }}>
                       <a
                         href={org.link}
                         target="_blank"
@@ -334,21 +343,18 @@ function MapView({ orgs }) {
         })}
       </MapContainer>
 
-      {/* Legend */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "10px",
-          left: "10px",
-          backgroundColor: "rgba(255, 255, 255, 0.85)",
-          padding: "8px 12px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-          fontSize: "0.9rem",
-          lineHeight: "1.4",
-          zIndex: 9999,
-        }}
-      >
+      <div style={{
+        position: "absolute",
+        bottom: "10px",
+        left: "10px",
+        backgroundColor: "rgba(255, 255, 255, 0.85)",
+        padding: "8px 12px",
+        borderRadius: "8px",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+        fontSize: "0.9rem",
+        lineHeight: "1.4",
+        zIndex: 9999,
+      }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
           <img
             src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png"
