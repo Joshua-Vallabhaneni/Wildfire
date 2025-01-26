@@ -210,7 +210,7 @@ function OrgCard({ org, cardType, volunteerId }) {
 
   const handleMessageClick = (e) => {
     e.stopPropagation();
-    navigate("/volunteer/" + volunteerId + "/messages", {
+    navigate("/messages", {
       state: {
         userId: volunteerId,
         recipientId: org._id,
@@ -365,7 +365,7 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
 
   const handleMessageClick = (e) => {
     e.stopPropagation();
-    navigate("/volunteer/" + volunteerId + "/messages", {
+    navigate("/messages", {
       state: {
         userId: volunteerId,
         recipientId: item.requestorId,
@@ -485,7 +485,7 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: '#4CAF50',
+                backgroundColor: '#34d058',
                 color: 'white',
                 fontSize: '14px',
                 fontWeight: '500',
@@ -493,10 +493,10 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
                 transition: 'background-color 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#45a049';
+                e.currentTarget.style.backgroundColor = '#28a745';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#4CAF50';
+                e.currentTarget.style.backgroundColor = '#34d058';
               }}
             >
               ✓ Complete
@@ -535,7 +535,7 @@ function UploadDialog({ onClose, item, volunteerId }) {
         }),
       });
       onClose();
-      navigate("/volunteer/" + volunteerId + "/sustainability", { 
+      navigate("/sustainability", { 
         state: { 
           userId: volunteerId,
           justCompleted: true 
