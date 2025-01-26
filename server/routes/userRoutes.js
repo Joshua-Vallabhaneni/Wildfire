@@ -15,98 +15,101 @@ router.post("/seed", async (req, res) => {
 
     const tasksPerCategory = {
       "Community Emergency Drills": [
-        { title: "Organize Fire Drill", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Conduct Evacuation Simulation", urgency: 6, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Set Up Emergency Signage", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Train Volunteers for Drills", urgency: 7, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Evaluate Drill Effectiveness", urgency: 5, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Coordinate with Local Fire Departments", urgency: 8, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Develop Drill Protocols", urgency: 6, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Promote Participation in Drills", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Assess Community Readiness", urgency: 7, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Document Drill Outcomes", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Plan Multi-Scenario Drills", urgency: 6, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Facilitate Feedback Sessions", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Update Drill Materials", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Schedule Regular Drills", urgency: 7, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Integrate Technology in Drills", urgency: 6, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Coordinate Transportation for Drills", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Ensure Accessibility During Drills", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
-        { title: "Manage Drill Resources", urgency: 6, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Collaborate with Schools for Drills", urgency: 7, specialtyRequired: true, category: "Community Emergency Drills" },
-        { title: "Analyze Drill Data", urgency: 5, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Organize Community Fire Drill", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
+        { title: "Conduct Evacuation Simulation Exercise", urgency: 6, specialtyRequired: false, category: "Community Emergency Drills" },
+        { title: "Set Up Emergency Exit Signage", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
+        { title: "Train Volunteers for Fire Drill Roles", urgency: 7, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Evaluate Effectiveness of Recent Drills", urgency: 5, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Coordinate with Local Fire Departments for Drills", urgency: 8, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Develop New Protocols for Multi-Scenario Drills", urgency: 6, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Promote Participation in Upcoming Drills", urgency: 4, specialtyRequired: false, category: "Community Emergency Drills" },
+        { title: "Assess Community Readiness through Drills", urgency: 7, specialtyRequired: true, category: "Community Emergency Drills" },
+        { title: "Document Outcomes from Recent Fire Drills", urgency: 5, specialtyRequired: false, category: "Community Emergency Drills" },
       ],
       Sustainability: [
-        { title: "Plant Fire-Resistant Trees", urgency: 7, specialtyRequired: false, category: "Sustainability" },
-        { title: "Fight Deforestation Efforts", urgency: 8, specialtyRequired: true, category: "Sustainability" },
-        { title: "Restore Burned Areas", urgency: 6, specialtyRequired: true, category: "Sustainability" },
-        { title: "Monitor Forest Health", urgency: 5, specialtyRequired: true, category: "Sustainability" },
-        { title: "Implement Controlled Burns", urgency: 7, specialtyRequired: true, category: "Sustainability" },
-        { title: "Educate Community on Fire Prevention", urgency: 6, specialtyRequired: false, category: "Sustainability" },
-        { title: "Develop Sustainable Land Use Plans", urgency: 8, specialtyRequired: true, category: "Sustainability" },
-        { title: "Promote Recycling Initiatives", urgency: 5, specialtyRequired: false, category: "Sustainability" },
-        { title: "Install Firebreaks", urgency: 7, specialtyRequired: true, category: "Sustainability" },
-        { title: "Conduct Environmental Impact Assessments", urgency: 6, specialtyRequired: true, category: "Sustainability" },
-        { title: "Coordinate Reforestation Projects", urgency: 8, specialtyRequired: true, category: "Sustainability" },
-        { title: "Manage Sustainable Resources", urgency: 5, specialtyRequired: false, category: "Sustainability" },
-        { title: "Develop Green Infrastructure", urgency: 7, specialtyRequired: true, category: "Sustainability" },
-        { title: "Promote Wildlife Conservation", urgency: 6, specialtyRequired: false, category: "Sustainability" },
-        { title: "Reduce Carbon Footprint Initiatives", urgency: 8, specialtyRequired: true, category: "Sustainability" },
-        { title: "Implement Water Conservation Programs", urgency: 5, specialtyRequired: false, category: "Sustainability" },
-        { title: "Support Renewable Energy Projects", urgency: 7, specialtyRequired: true, category: "Sustainability" },
-        { title: "Facilitate Community Clean-Up Drives", urgency: 6, specialtyRequired: false, category: "Sustainability" },
-        { title: "Monitor Air Quality", urgency: 5, specialtyRequired: true, category: "Sustainability" },
-        { title: "Develop Sustainable Agriculture Practices", urgency: 8, specialtyRequired: true, category: "Sustainability" },
+        { title: "Combat Deforestation in High-Risk Areas", urgency: 8, specialtyRequired: true, category: "Sustainability" },
+        { title: "Restore Vegetation in Burned Forests", urgency: 6, specialtyRequired: true, category: "Sustainability" },
+        { title: "Monitor Health of Local Forests", urgency: 5, specialtyRequired: true, category: "Sustainability" },
+        { title: "Implement Controlled Burns to Manage Underbrush", urgency: 7, specialtyRequired: true, category: "Sustainability" },
+        { title: "Educate Community on Fire Prevention Techniques", urgency: 6, specialtyRequired: false, category: "Sustainability" },
+        { title: "Develop Sustainable Land Use Strategies", urgency: 8, specialtyRequired: true, category: "Sustainability" },
+        { title: "Promote Recycling and Waste Reduction Initiatives", urgency: 5, specialtyRequired: false, category: "Sustainability" },
+        { title: "Install and Maintain Firebreaks in Forested Areas", urgency: 7, specialtyRequired: true, category: "Sustainability" },
+        { title: "Conduct Environmental Impact Studies Post-Wildfire", urgency: 6, specialtyRequired: true, category: "Sustainability" },
       ],
       "Emergency Response": [
-        { title: "Set Up Emergency Shelters", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Distribute Relief Supplies", urgency: 7, specialtyRequired: false, category: "Emergency Response" },
-        { title: "Coordinate Search and Rescue Operations", urgency: 9, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Provide Medical Assistance", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Manage Emergency Communication Systems", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Conduct Damage Assessments", urgency: 6, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Organize Volunteer Teams for Rescue", urgency: 8, specialtyRequired: false, category: "Emergency Response" },
-        { title: "Ensure Safe Water Supply in Emergencies", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Coordinate with Local Authorities", urgency: 9, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Facilitate Evacuation Processes", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Provide Psychological Support to Affected Individuals", urgency: 6, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Set Up Temporary Housing Facilities", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Manage Logistics for Emergency Supplies", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Implement Fire Suppression Techniques", urgency: 9, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Monitor Weather Conditions for Emergencies", urgency: 5, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Coordinate Transportation for Evacuees", urgency: 7, specialtyRequired: false, category: "Emergency Response" },
-        { title: "Set Up Emergency Power Systems", urgency: 6, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Facilitate Community Recovery Efforts", urgency: 5, specialtyRequired: false, category: "Emergency Response" },
-        { title: "Provide Training for Emergency Responders", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
-        { title: "Develop Emergency Response Plans", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Set Up Emergency Shelters for Wildfire Evacuees", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Distribute Relief Supplies to Affected Areas", urgency: 7, specialtyRequired: false, category: "Emergency Response" },
+        { title: "Coordinate Search and Rescue Missions", urgency: 9, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Provide Medical Assistance During Wildfires", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Manage Communication Systems in Emergencies", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Conduct Damage Assessments After Wildfires", urgency: 6, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Organize Volunteer Rescue Teams", urgency: 8, specialtyRequired: false, category: "Emergency Response" },
+        { title: "Ensure Safe Water Supply During Emergencies", urgency: 7, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Coordinate with Local Authorities for Emergency Response", urgency: 9, specialtyRequired: true, category: "Emergency Response" },
+        { title: "Facilitate Evacuation Processes for Vulnerable Populations", urgency: 8, specialtyRequired: true, category: "Emergency Response" },
       ],
       Infrastructure: [
-        { title: "Rebuild Damaged Roads", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Repair Power Lines", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Reconstruct Public Buildings", urgency: 9, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Upgrade Water Supply Systems", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Install Emergency Lighting", urgency: 6, specialtyRequired: false, category: "Infrastructure" },
-        { title: "Maintain Communication Towers", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Reinforce Bridge Structures", urgency: 9, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Deploy Mobile Power Units", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Set Up Temporary Shelters", urgency: 6, specialtyRequired: false, category: "Infrastructure" },
-        { title: "Establish Mobile Health Clinics", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Implement Flood Barriers", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Restore Transportation Networks", urgency: 9, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Build Emergency Access Roads", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Maintain Sewage Treatment Plants", urgency: 6, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Upgrade Electrical Grid Systems", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Install Temporary Housing Units", urgency: 5, specialtyRequired: false, category: "Infrastructure" },
-        { title: "Develop Resilient Infrastructure Plans", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Repair Public Transportation Systems", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Set Up Emergency Water Purification Systems", urgency: 6, specialtyRequired: true, category: "Infrastructure" },
-        { title: "Monitor Structural Integrity of Buildings", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Rebuild Damaged Roads Post-Wildfire", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Repair Power Lines Affected by Wildfires", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Reconstruct Public Buildings Destroyed by Fires", urgency: 9, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Upgrade Water Supply Systems to Prevent Fire Hazards", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Install Emergency Lighting in Critical Areas", urgency: 6, specialtyRequired: false, category: "Infrastructure" },
+        { title: "Maintain Communication Towers Post-Wildfire", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Reinforce Bridge Structures Vulnerable to Fires", urgency: 9, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Deploy Mobile Power Units in Affected Regions", urgency: 7, specialtyRequired: true, category: "Infrastructure" },
+        { title: "Set Up Temporary Shelters for Displaced Residents", urgency: 6, specialtyRequired: false, category: "Infrastructure" },
+        { title: "Establish Mobile Health Clinics in Emergency Zones", urgency: 8, specialtyRequired: true, category: "Infrastructure" },
       ],
     };
 
-    const generateRandomName = (index) => `Requester User ${index + 1}`;
+    const celebrityNames = [
+      "Tom Hanks",
+      "Emma Watson",
+      "Dwayne Johnson",
+      "Scarlett Johansson",
+      "Chris Hemsworth",
+      "Jennifer Lawrence",
+      "Leonardo DiCaprio",
+      "Gal Gadot",
+      "Ryan Reynolds",
+      "Zendaya",
+      "Brad Pitt",
+      "Margot Robbie",
+      "Will Smith",
+      "Natalie Portman",
+      "Chris Evans",
+      "Ariana Grande",
+      "Henry Cavill",
+      "Beyoncé Knowles",
+      "Robert Downey Jr.",
+      "Taylor Swift",
+      "Jason Momoa",
+      "Selena Gomez",
+      "Keanu Reeves",
+      "Lady Gaga",
+      "Chris Pratt",
+      "Rihanna Fenty",
+      "Mark Ruffalo",
+      "Katy Perry",
+      "Jason Statham",
+      "Adele Adkins",
+      "Samuel L. Jackson",
+      "Billie Eilish",
+      "Justin Bieber",
+      "Gal Gadot",
+      "Chris Pine",
+      "Kendall Jenner",
+      "John Legend",
+      "Zendaya",
+      "Drake Graham",
+      "Dua Lipa",
+      "Timothée Chalamet",
+    ];
+
+    const generateRandomName = (index) => celebrityNames[index % celebrityNames.length];
     const generateRandomEmail = (index) => `requester${index + 1}@example.com`;
-    const generateRandomAddress = (index) => `${100 + index} Sample St, Springfield`;
+    const generateRandomAddress = (index) => `${100 + index} Celebrity Blvd, Springfield`;
 
     const sampleUsers = [
       // Existing Users
@@ -221,21 +224,21 @@ router.post("/seed", async (req, res) => {
       // Generated Requester Users
     ];
 
-    // Generate 80 Requester Users
-    for (let i = 0; i < 80; i++) {
+    // Generate 40 Requester Users (10 per category)
+    for (let i = 0; i < 40; i++) {
       const userIndex = i + 1;
-      const categoryIndex = Math.floor(i / 20); // 0: Community Emergency Drills, 1: Sustainability, 2: Emergency Response, 3: Infrastructure
+      const categoryIndex = Math.floor(i / 10); // 0: Community Emergency Drills, 1: Sustainability, 2: Emergency Response, 3: Infrastructure
       const category = categories[categoryIndex];
       const tasks = tasksPerCategory[category];
-      
+
       // Assign 1 or 2 tasks per user
-      const numberOfTasks = Math.random() < 0.7 ? 1 : 2; // 70% have 1 task, 30% have 2 tasks
-      
+      const numberOfTasks = i % 3 === 0 ? 2 : 1; // Approximately 1/3 have 2 tasks
+
       const userTasks = [];
       for (let j = 0; j < numberOfTasks; j++) {
-        // Select a random task from the category
-        const task = tasks[Math.floor(Math.random() * tasks.length)];
-        userTasks.push(task);
+        // Select a task ensuring similar but varied wording
+        const task = tasks[j % tasks.length];
+        userTasks.push({ ...task });
       }
 
       sampleUsers.push({
@@ -256,6 +259,30 @@ router.post("/seed", async (req, res) => {
         tasksRequested: userTasks,
       });
     }
+
+    // Leave room for one test case
+    // Example:
+    /*
+    sampleUsers.push({
+      name: "Test User",
+      email: "testuser@example.com",
+      age: 30,
+      address: "999 Test St, Springfield",
+      isVolunteer: false,
+      availability: {
+        Monday: ["9am-5pm"],
+        Tuesday: ["9am-5pm"],
+      },
+      tasksRequested: [
+        {
+          title: "Test Task Title",
+          urgency: 10,
+          specialtyRequired: true,
+          category: "Emergency Response",
+        },
+      ],
+    });
+    */
 
     // Insert sample users into the database
     // Clear existing users and insert new ones
