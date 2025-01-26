@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MatchingDashboard from "../../components/MatchingDashboard";
 import MapView from "../../components/MapView";
+import NavBar from "../../components/NavBar"; // Import NavBar
+
 
 function VolunteerDashboard() {
   const { userId } = useParams();
@@ -12,6 +14,7 @@ function VolunteerDashboard() {
   const [orgs, setOrgs] = useState([]);
   const [matches, setMatches] = useState(null); // Add this state
   const [userLocation, setUserLocation] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     // Validate userId
@@ -83,43 +86,7 @@ function VolunteerDashboard() {
   return (
     <div style={styles.container}>
       {/* Top Navigation Bar */}
-      <nav style={styles.navBar}>
-        <div style={styles.navLinks}>
-          <Link
-            to={`/volunteer/${userId}/dashboard`}
-            style={styles.navLinkItem}
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/messages"
-            state={{ userId: userId }}
-            style={styles.navLinkItem}
-          >
-            Direct Messages
-          </Link>
-          <Link to="/sustainability" style={styles.navLinkItem}>
-            Sustainability Tracker
-          </Link>
-        </div>
-        {/* Button to switch between tasks/map */}
-        <button
-          onClick={() =>
-            setCurrentView(currentView === "tasks" ? "map" : "tasks")
-          }
-          style={styles.switchButton}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = styles.switchButtonHover.transform;
-            e.currentTarget.style.boxShadow = styles.switchButtonHover.boxShadow;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "none";
-            e.currentTarget.style.boxShadow = styles.switchButton.boxShadow;
-          }}
-        >
-          {currentView === "tasks" ? "Switch to Map View" : "Switch to Tasks"}
-        </button>
-      </nav>
+      <NavBar userId={userId} /> {/* Replace the NavBar component with the imported one */}
 
       {/* Warning banner if geolocation or fetch failed */}
       {warning && (
@@ -151,12 +118,6 @@ const styles = {
     fontFamily: '"Inter", -apple-system, sans-serif',
     color: "#1a1a1a",
   },
-  navBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "1rem 2rem",
-  },
   navLinks: {
     display: "flex",
     gap: "2rem",
@@ -175,7 +136,8 @@ const styles = {
     fontSize: "1rem",
     fontWeight: 700,
     color: "#fff",
-    background: "linear-gradient(135deg, #0099CC, #66CCFF)",
+   background: "#000",
+
     border: "none",
     borderRadius: "999px",
     padding: "0.75rem 1.5rem",

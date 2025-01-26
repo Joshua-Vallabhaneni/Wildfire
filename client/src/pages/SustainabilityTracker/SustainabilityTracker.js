@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+// In SustainabilityTracker.js
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import NavBar from "../../components/NavBar"; // Import NavBar
 
 const categories = {
   Sustainability: "Environmental recovery and conservation efforts",
@@ -101,6 +103,14 @@ const styles = {
     borderRadius: "4px",
     transition: "width 1s ease-in-out",
   },
+  spinner: { // Spinner styles
+    width: '60px',
+    height: '60px',
+    border: '6px solid rgba(255, 165, 0, 0.3)',
+    borderTop: '6px solid #FF4500',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  }
 };
 
 // ProgressMeter Component
@@ -116,6 +126,7 @@ const ProgressMeter = ({ count, maxWidth = 100 }) => (
 );
 
 const SustainabilityTracker = () => {
+  const { userId } = useParams(); // Get userId from URL params
   const [completedTasks, setCompletedTasks] = useState({});
   const [loading, setLoading] = useState(true);
   const location = useLocation();
@@ -155,12 +166,13 @@ const SustainabilityTracker = () => {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.backgroundLayer1} />
-        <div style={styles.backgroundLayer2} />
-        <div style={styles.card}>
-          <h1 style={styles.title}>Loading...</h1>
-        </div>
+      <div style={{ 
+        ...styles.container, 
+        justifyContent: "center",
+        alignItems: "center",
+        background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)" // Consistent background
+      }}>
+        <div style={styles.spinner}></div> {/* Centered Spinner */}
       </div>
     );
   }
@@ -173,6 +185,8 @@ const SustainabilityTracker = () => {
 
   return (
     <div style={styles.container}>
+      <NavBar userId={userId} /> {/* Include NavBar */}
+      
       <div style={styles.backgroundLayer1} />
       <div style={styles.backgroundLayer2} />
       
@@ -186,7 +200,7 @@ const SustainabilityTracker = () => {
         }}>
           <div style={styles.metricHeader}>
             <h2 style={{...styles.metricTitle, color: "#FF4500"}}>Total Impact</h2>
-            <div style={styles.metricCount}>31</div>
+            <div style={styles.metricCount}>{totalCompleted}</div>
           </div>
           <p style={styles.description}>Total tasks completed across all categories</p>
           <ProgressMeter count={totalCompleted} />

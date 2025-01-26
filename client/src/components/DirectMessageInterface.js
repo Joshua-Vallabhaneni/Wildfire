@@ -1,5 +1,6 @@
 import { Send, Search } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import NavBar from "./NavBar";
 import './DirectMessageInterface.css';
 
 function DirectMessageInterface({ userId, initialRecipient }) {
@@ -188,115 +189,118 @@ function DirectMessageInterface({ userId, initialRecipient }) {
   );
 
   return (
-    <div className="dmi-container">
-      <div className="dmi-sidebar">
-        <div className="dmi-search-box">
-          <div className="dmi-search-relative">
-            <input
-              type="text"
-              placeholder={`Search ${userType === 'volunteer' ? 'requesters' : 'volunteers'}`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="dmi-search-input"
-            />
-            <Search className="dmi-search-icon" size={20} />
-          </div>
-        </div>
-
-        <div className="dmi-conversations-list">
-          {isLoading ? (
-            <div className="dmi-loading">Loading conversations...</div>
-          ) : filteredConversations.length > 0 ? (
-            filteredConversations.map((conv) => (
-              <div
-                key={conv.userId}
-                className={`dmi-conversation-item ${
-                  selectedConversation?.userId === conv.userId ? 'selected' : ''
-                }`}
-                onClick={() => setSelectedConversation(conv)}
-              >
-                <div className="dmi-conversation-avatar">
-                  {conv.name?.charAt(0) || '?'}
-                </div>
-                <div className="dmi-conversation-info">
-                  <div className="dmi-conversation-name">{conv.name || 'Unknown'}</div>
-                  <div className="dmi-conversation-last-message">
-                    {conv.lastMessage || 'Start a conversation'}
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="dmi-no-conversations">No conversations found</div>
-          )}
-        </div>
-      </div>
-
-      <div className="dmi-messages-container">
-        {selectedConversation ? (
-          <>
-            <div className="dmi-chat-header">
-              <div className="dmi-chat-header-avatar">
-                {selectedConversation.name?.charAt(0) || '?'}
-              </div>
-              <h2 className="dmi-chat-header-title">
-                {selectedConversation.name || 'Unknown'}
-              </h2>
+    <div>
+      <NavBar userId={userId} /> {/* Include NavBar */}
+      <div className="dmi-container">
+        <div className="dmi-sidebar">
+          <div className="dmi-search-box">
+            <div className="dmi-search-relative">
+              <input
+                type="text"
+                placeholder={`Search ${userType === 'volunteer' ? 'requesters' : 'volunteers'}`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="dmi-search-input"
+              />
+              <Search className="dmi-search-icon" size={20} />
             </div>
+          </div>
 
-            <div className="dmi-messages-area">
-              <div className="dmi-messages-space">
-                {messages.map((message) => (
-                  <div
-                    key={message._id}
-                    className={`dmi-message-row ${
-                      message.senderId === userId ? 'sender' : 'receiver'
-                    }`}
-                  >
-                    <div
-                      className={`dmi-message-bubble ${
-                        message.senderId === userId ? 'sender-bubble' : 'receiver-bubble'
-                      }`}
-                    >
-                      {message.content}
-                      <div className="dmi-message-time">
-                        {new Date(message.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
+          <div className="dmi-conversations-list">
+            {isLoading ? (
+              <div className="dmi-loading">Loading conversations...</div>
+            ) : filteredConversations.length > 0 ? (
+              filteredConversations.map((conv) => (
+                <div
+                  key={conv.userId}
+                  className={`dmi-conversation-item ${
+                    selectedConversation?.userId === conv.userId ? 'selected' : ''
+                  }`}
+                  onClick={() => setSelectedConversation(conv)}
+                >
+                  <div className="dmi-conversation-avatar">
+                    {conv.name?.charAt(0) || '?'}
+                  </div>
+                  <div className="dmi-conversation-info">
+                    <div className="dmi-conversation-name">{conv.name || 'Unknown'}</div>
+                    <div className="dmi-conversation-last-message">
+                      {conv.lastMessage || 'Start a conversation'}
                     </div>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-            <div className="dmi-message-input-container">
-              <div className="dmi-message-input-wrapper">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
-                  className="dmi-message-input"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
-                  className="dmi-send-button"
-                >
-                  <Send size={20} />
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="dmi-no-conversation-selected">
-            Select a conversation to start chatting
+                </div>
+              ))
+            ) : (
+              <div className="dmi-no-conversations">No conversations found</div>
+            )}
           </div>
-        )}
+        </div>
+
+        <div className="dmi-messages-container">
+          {selectedConversation ? (
+            <>
+              <div className="dmi-chat-header">
+                <div className="dmi-chat-header-avatar">
+                  {selectedConversation.name?.charAt(0) || '?'}
+                </div>
+                <h2 className="dmi-chat-header-title">
+                  {selectedConversation.name || 'Unknown'}
+                </h2>
+              </div>
+
+              <div className="dmi-messages-area">
+                <div className="dmi-messages-space">
+                  {messages.map((message) => (
+                    <div
+                      key={message._id}
+                      className={`dmi-message-row ${
+                        message.senderId === userId ? 'sender' : 'receiver'
+                      }`}
+                    >
+                      <div
+                        className={`dmi-message-bubble ${
+                          message.senderId === userId ? 'sender-bubble' : 'receiver-bubble'
+                        }`}
+                      >
+                        {message.content}
+                        <div className="dmi-message-time">
+                          {new Date(message.timestamp).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+
+              <div className="dmi-message-input-container">
+                <div className="dmi-message-input-wrapper">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Type a message..."
+                    className="dmi-message-input"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim()}
+                    className="dmi-send-button"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="dmi-no-conversation-selected">
+              Select a conversation to start chatting
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
