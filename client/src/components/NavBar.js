@@ -9,7 +9,6 @@ function NavBar({ userId }) {
       alignItems: "center",
       justifyContent: "space-between",
       padding: "1rem 2rem",
-      background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)", // Consistent background
     },
     navLinks: {
       display: "flex",
@@ -43,7 +42,11 @@ function NavBar({ userId }) {
         >
           Direct Messages
         </Link>
-        <Link to="/sustainability" style={styles.navLinkItem}>
+        <Link 
+          to="/sustainability" 
+          state={{ userId: userId }}
+          style={styles.navLinkItem}
+        >
           Sustainability Tracker
         </Link>
       </div>

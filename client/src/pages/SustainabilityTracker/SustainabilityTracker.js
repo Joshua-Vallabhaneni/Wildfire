@@ -1,7 +1,7 @@
-// In SustainabilityTracker.js
+// src/pages/SustainabilityTracker.js
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import NavBar from "../../components/NavBar"; // Import NavBar
+import NavBar from "../../components/NavBar"; // Correct Import Path
 
 const categories = {
   Sustainability: "Environmental recovery and conservation efforts",
@@ -14,13 +14,15 @@ const styles = {
   container: {
     minHeight: "100vh",
     display: "flex",
-    alignItems: "flex-start",
+    flexDirection: "column", // Ensure column layout
+    alignItems: "center", // Center content horizontally
     padding: "4rem 2rem",
     fontFamily: '"Inter", -apple-system, sans-serif',
     background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)",
     color: "#1a1a1a",
     position: "relative",
     overflow: "hidden",
+    boxSizing: "border-box",
   },
   backgroundLayer1: {
     position: "absolute",
@@ -45,8 +47,9 @@ const styles = {
     border: "1px solid rgba(255, 165, 0, 0.2)",
     width: "100%",
     maxWidth: "800px",
-    margin: "0 auto",
+    margin: "2rem auto 0", // Added top margin for spacing below NavBar
     boxShadow: "0 16px 40px rgba(255, 69, 0, 0.1)",
+    boxSizing: "border-box",
   },
   title: {
     fontSize: "2.5rem",
@@ -136,9 +139,9 @@ const SustainabilityTracker = () => {
     if (location.state?.justCompleted) {
       fetchData();
       // Navigate to remove the `justCompleted` state
-      navigate('/sustainability', { replace: true });
+      navigate(`/volunteer/${userId}/sustainability`, { replace: true });
     }
-  }, [location.state?.justCompleted, navigate]);
+  }, [location.state?.justCompleted, navigate, userId]);
 
   const fetchData = async () => {
     try {

@@ -1,10 +1,9 @@
 // In VolunteerDashboard.js
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import MatchingDashboard from "../../components/MatchingDashboard";
 import MapView from "../../components/MapView";
-import NavBar from "../../components/NavBar"; // Import NavBar
-
+import NavBar from "../../components/NavBar";
 
 function VolunteerDashboard() {
   const { userId } = useParams();
@@ -12,12 +11,10 @@ function VolunteerDashboard() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState("tasks"); // "tasks" or "map"
   const [orgs, setOrgs] = useState([]);
-  const [matches, setMatches] = useState(null); // Add this state
+  const [matches, setMatches] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // Validate userId
     if (!userId) {
       setWarning("No user ID found in the URL.");
       setLoading(false);
@@ -72,30 +69,37 @@ function VolunteerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ 
-        ...styles.container, 
-        justifyContent: "center",
-        alignItems: "center", // Add this line for vertical centering
-        background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)" // Updated background
-      }}>
-        <div style={styles.spinner}></div> {/* Spinner in the center */}
+      <div style={styles.container}>
+        <div style={styles.spinner}></div>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* Top Navigation Bar */}
-      <NavBar userId={userId} /> {/* Replace the NavBar component with the imported one */}
+      <NavBar userId={userId} />
 
-      {/* Warning banner if geolocation or fetch failed */}
       {warning && (
         <div style={styles.warningBanner}>
           <strong>Warning:</strong> {warning}
         </div>
       )}
 
-      {/* Main Content: tasks or map */}
+      <button
+        onClick={() => setCurrentView(currentView === "tasks" ? "map" : "tasks")}
+        style={styles.switchButton}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px) scale(1.05)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "none";
+          e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.1)";
+        }}
+      >
+        Switch to {currentView === "tasks" ? "Map" : "Tasks"} View
+      </button>
+
       <div style={styles.contentWrapper}>
         {currentView === "tasks" ? (
           <MatchingDashboard volunteerId={userId} />
@@ -109,45 +113,11 @@ function VolunteerDashboard() {
 
 const styles = {
   container: {
-    backgroundColor: "#FFA500",
-    position: "relative",
     minHeight: "100vh",
+    background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)",
     display: "flex",
     flexDirection: "column",
-    alignItems: "stretch",
-    fontFamily: '"Inter", -apple-system, sans-serif',
-    color: "#1a1a1a",
-  },
-  navLinks: {
-    display: "flex",
-    gap: "2rem",
-  },
-  navLinkItem: {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    textDecoration: "none",
-    color: "#fff",
-    backgroundColor: "#000",
-    padding: "0.6rem 1.2rem",
-    borderRadius: "8px",
-    transition: "all 0.3s ease",
-  },
-  switchButton: {
-    fontSize: "1rem",
-    fontWeight: 700,
-    color: "#fff",
-   background: "#000",
-
-    border: "none",
-    borderRadius: "999px",
-    padding: "0.75rem 1.5rem",
-    cursor: "pointer",
-    boxShadow: "0 4px 20px rgba(0, 153, 204, 0.3)",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
-  },
-  switchButtonHover: {
-    transform: "translateY(-2px) scale(1.05)",
-    boxShadow: "0 8px 24px rgba(0, 153, 204, 0.4)",
+    position: "relative",
   },
   warningBanner: {
     margin: "1rem auto",
@@ -159,32 +129,45 @@ const styles = {
     color: "#856404",
     fontSize: "1rem",
   },
+  viewToggle: {
+    position: "absolute",
+    top: "1rem",
+    right: "2rem",
+    zIndex: 2,
+  },
+  switchButton: {
+    position: "absolute",
+    top: "1rem",
+    right: "1rem",
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "#fff",
+    background: "#000",
+    border: "none",
+    borderRadius: "8px",
+    padding: "0.75rem 1.5rem",
+    cursor: "pointer",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+    transition: "all 0.3s ease",
+    zIndex: 10,
+  },
   contentWrapper: {
     flex: 1,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: "2rem",
+    position: "relative",
+    zIndex: 1,
   },
-  spinner: { // Spinner styles
+  spinner: {
     width: '60px',
     height: '60px',
     border: '6px solid rgba(255, 165, 0, 0.3)',
     borderTop: '6px solid #FF4500',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
   }
 };
-
-// Add the spin animation to the document
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-document.head.appendChild(styleSheet);
-
 
 export default VolunteerDashboard;
