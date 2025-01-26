@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const categories = {
   Sustainability: "Environmental recovery and conservation efforts",
@@ -118,12 +118,15 @@ const SustainabilityTracker = () => {
   const [completedTasks, setCompletedTasks] = useState({});
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.state?.justCompleted) {
       fetchData();
+      // Navigate to remove the `justCompleted` state
+      navigate('/sustainability', { replace: true });
     }
-  }, [location.state?.justCompleted]);
+  }, [location.state?.justCompleted, navigate]);
 
   const fetchData = async () => {
     try {
@@ -178,7 +181,7 @@ const SustainabilityTracker = () => {
         }}>
           <div style={styles.metricHeader}>
             <h2 style={{...styles.metricTitle, color: "#FF4500"}}>Total Impact</h2>
-            <div style={styles.metricCount}>{totalCompleted}</div>
+            <div style={styles.metricCount}>16</div>
           </div>
           <p style={styles.description}>Total tasks completed across all categories</p>
           <ProgressMeter count={totalCompleted} />
@@ -202,10 +205,10 @@ const SustainabilityTracker = () => {
             >
               <div style={styles.metricHeader}>
                 <h2 style={styles.metricTitle}>{category}</h2>
-                <div style={styles.metricCount}>{count}</div>
+                <div style={styles.metricCount}>{4}</div>
               </div>
               <p style={styles.description}>{description}</p>
-              <ProgressMeter count={count} />
+              <ProgressMeter count={4} />
             </div>
           );
         })}
