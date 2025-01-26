@@ -24,13 +24,13 @@
 }
 
 .dmi-search-input {
+  box-sizing: border-box; /* Add this line */
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   outline: none;
 }
-
 .dmi-search-input:focus {
   border-color: #FF4500;
 }
