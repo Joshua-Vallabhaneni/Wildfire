@@ -535,11 +535,13 @@ function UploadDialog({ onClose, item, volunteerId }) {
         }),
       });
       onClose();
-      navigate("/sustainability", { 
+      // Updated navigation to match the app's routing structure
+      navigate(`/volunteer/${volunteerId}/sustainability`, { 
         state: { 
           userId: volunteerId,
           justCompleted: true 
-        } 
+        },
+        replace: true 
       });
     } catch (error) {
       console.error('Error saving completed task:', error);

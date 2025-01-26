@@ -15,7 +15,7 @@ function App() {
         <Route path="/requester/*" element={<RequesterFlow />} />
         <Route path="/volunteer/*" element={<VolunteerFlow />} />
         <Route path="/messages" element={<DirectMessages />} />
-        <Route path="/sustainability" element={<SustainabilityTracker />} />
+        <Route path="/volunteer/:userId/sustainability" element={<SustainabilityTracker />} />
       </Routes>
     </div>
   );
