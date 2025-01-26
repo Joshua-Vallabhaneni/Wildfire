@@ -12,7 +12,6 @@ function DirectMessageInterface({ userId, initialRecipient }) {
   const [userType, setUserType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Handle initial recipient and create new conversation
   useEffect(() => {
     console.log('DirectMessageInterface props:', {
       userId,
@@ -43,7 +42,6 @@ function DirectMessageInterface({ userId, initialRecipient }) {
     }
   }, [initialRecipient]);
 
-  // Fetch user type
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -59,7 +57,6 @@ function DirectMessageInterface({ userId, initialRecipient }) {
     }
   }, [userId]);
 
-  // Fetch all conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!userId) return;
@@ -70,14 +67,16 @@ function DirectMessageInterface({ userId, initialRecipient }) {
         
         const data = await response.json();
         setConversations(prevConvs => {
+          // Filter out self-conversations
+          const filteredData = data.filter(conv => conv.userId !== userId);
+          
           // Merge existing conversations with new ones
-          const newConvs = data.filter(newConv => 
+          const newConvs = filteredData.filter(newConv => 
             !prevConvs.some(prevConv => prevConv.userId === newConv.userId)
           );
           
-          // Preserve selected conversation
           const updatedConvs = [...prevConvs];
-          data.forEach(newConv => {
+          filteredData.forEach(newConv => {
             const existingIndex = updatedConvs.findIndex(conv => conv.userId === newConv.userId);
             if (existingIndex >= 0) {
               updatedConvs[existingIndex] = {
@@ -105,7 +104,6 @@ function DirectMessageInterface({ userId, initialRecipient }) {
     return () => clearInterval(intervalId);
   }, [userId]);
 
-  // Fetch messages for selected conversation
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedConversation?.userId || !userId) return;
@@ -136,6 +134,12 @@ function DirectMessageInterface({ userId, initialRecipient }) {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation?.userId) return;
+    
+    // Prevent sending message to self
+    if (selectedConversation.userId === userId) {
+      console.error('Cannot send message to self');
+      return;
+    }
 
     try {
       const response = await fetch('http://localhost:8080/api/messages', {
@@ -152,25 +156,25 @@ function DirectMessageInterface({ userId, initialRecipient }) {
 
       const message = await response.json();
       
-      // Update messages
-      setMessages(prev => [...prev, message]);
-      
-      // Update conversation list
-      setConversations(prev => {
-        const updated = prev.map(conv => {
-          if (conv.userId === selectedConversation.userId) {
-            return {
-              ...conv,
-              lastMessage: newMessage,
-              timestamp: new Date().toISOString()
-            };
-          }
-          return conv;
-        });
+      // Only update if not sending to self
+      if (message.receiverId !== userId) {
+        setMessages(prev => [...prev, message]);
         
-        // Sort by latest message
-        return updated.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      });
+        setConversations(prev => {
+          const updated = prev.map(conv => {
+            if (conv.userId === selectedConversation.userId) {
+              return {
+                ...conv,
+                lastMessage: newMessage,
+                timestamp: new Date().toISOString()
+              };
+            }
+            return conv;
+          });
+          
+          return updated.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+      }
       
       setNewMessage('');
       scrollToBottom();
@@ -179,14 +183,12 @@ function DirectMessageInterface({ userId, initialRecipient }) {
     }
   };
 
-  // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv =>
     conv.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="dmi-container">
-      {/* Left sidebar - Conversations */}
       <div className="dmi-sidebar">
         <div className="dmi-search-box">
           <div className="dmi-search-relative">
@@ -230,7 +232,6 @@ function DirectMessageInterface({ userId, initialRecipient }) {
         </div>
       </div>
 
-      {/* Right side - Messages */}
       <div className="dmi-messages-container">
         {selectedConversation ? (
           <>
