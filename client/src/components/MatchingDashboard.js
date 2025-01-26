@@ -100,29 +100,52 @@ function MatchingDashboard({ volunteerId }) {
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingText}>Loading matches...</div>
-        <div style={styles.spinner}></div>
+      <div style={styles.container}>
+        <div style={styles.backgroundLayer1} />
+        <div style={styles.backgroundLayer2} />
+        <div style={styles.loadingContainer}>
+          <div style={styles.loadingText}>Loading matches...</div>
+          <div style={styles.spinner}></div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={styles.errorBox}>
-        <strong>Error:</strong> {error}
+      <div style={styles.container}>
+        <div style={styles.backgroundLayer1} />
+        <div style={styles.backgroundLayer2} />
+        <div style={styles.errorBox}>
+          <strong>Error:</strong> {error}
+        </div>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
+      <div style={styles.backgroundLayer1} />
+      <div style={styles.backgroundLayer2} />
       <div style={styles.card}>
         <div style={styles.headerContainer}>
           <h1 style={styles.heading}>Your Matched Opportunities</h1>
           <button 
             onClick={handleRefresh} 
-            style={styles.refreshButton}
+            style={{
+              ...styles.refreshButton,
+              background: "linear-gradient(135deg, #FF4500, #FFA500)",
+              border: "none",
+              boxShadow: "0 4px 20px rgba(255, 69, 0, 0.2)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+              e.currentTarget.style.boxShadow = "0 6px 24px rgba(255, 69, 0, 0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 4px 20px rgba(255, 69, 0, 0.2)";
+            }}
             disabled={refreshing}
           >
             {refreshing ? 'Loading...' : '🔄 Next Matches'}
@@ -409,16 +432,38 @@ function getCardStyles(type) {
 
 const styles = {
   container: {
-    width: '100%',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '2rem',
+    minHeight: "100vh",
+    width: "100%",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    padding: "4rem 2rem",
+    fontFamily: '"Inter", -apple-system, sans-serif',
+    background: "linear-gradient(150deg, #E86A33 0%, #F4A460 45%, #F7BE6D 100%)",
+    color: "#1a1a1a",
+    position: "relative",
+    overflow: "hidden",
+  },
+  backgroundLayer2: {
+    position: "absolute",
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    bottom: 0,
+    background: "radial-gradient(circle at 30% 100%, #FFA500, transparent)",
+    opacity: 0.2,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: '24px',
-    padding: '2rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    position: "relative",
+    zIndex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(16px)",
+    borderRadius: "24px",
+    padding: "2rem",
+    border: "1px solid rgba(255, 165, 0, 0.2)",
+    width: "100%",
+    maxWidth: "1200px",
+    boxShadow: "0 16px 40px rgba(255, 69, 0, 0.1)",
   },
   headerContainer: {
     display: 'flex',
@@ -435,24 +480,13 @@ const styles = {
   },
   refreshButton: {
     padding: '0.75rem 1.5rem',
-    borderRadius: '8px',
+    borderRadius: '12px',
     border: 'none',
-    backgroundColor: '#3498db',
-    color: 'white',
     fontSize: '1rem',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    '&:hover': {
-      backgroundColor: '#2980b9',
-    },
-    '&:disabled': {
-      backgroundColor: '#bdc3c7',
-      cursor: 'not-allowed',
-    },
+    transition: 'all 0.3s ease',
+    color: 'white',
   },
   horizontalLayout: {
     display: 'flex',
@@ -478,6 +512,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     border: '1px solid',
+    backdropFilter: "blur(8px)",
   },
   cardHeader: {
     display: 'flex',
@@ -523,34 +558,34 @@ const styles = {
     padding: '0.5rem 1rem',
     borderRadius: '8px',
     border: 'none',
-    backgroundColor: '#0095F6',
+    background: "linear-gradient(135deg, #FF4500, #FFA500)",
     color: 'white',
     fontSize: '0.875rem',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s ease',
   },
   websiteButton: {
     padding: '0.5rem 1rem',
     borderRadius: '8px',
     border: 'none',
-    backgroundColor: '#28a745',
+    background: "linear-gradient(135deg, #28a745, #34d058)",
     color: 'white',
     fontSize: '0.875rem',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s ease',
   },
   completeButton: {
     padding: '0.5rem 1rem',
     borderRadius: '8px',
     border: 'none',
-    backgroundColor: '#4CAF50',
+    background: "linear-gradient(135deg, #34d058, #28a745)",
     color: 'white',
     fontSize: '0.875rem',
     fontWeight: '500',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s ease',
   },
   modalOverlay: {
     position: 'fixed',
@@ -573,11 +608,13 @@ const styles = {
     width: '90%',
     maxWidth: '500px',
     zIndex: 1000,
+    boxShadow: "0 16px 40px rgba(255, 69, 0, 0.1)",
   },
   modalTitle: {
     fontSize: '1.25rem',
     fontWeight: '600',
     marginBottom: '1rem',
+    color: '#333',
   },
   modalText: {
     color: '#666',
@@ -585,6 +622,7 @@ const styles = {
   },
   fileInput: {
     marginBottom: '1rem',
+    width: '100%',
   },
   cancelButton: {
     padding: '0.5rem 1rem',
@@ -593,6 +631,7 @@ const styles = {
     backgroundColor: '#666',
     color: 'white',
     cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
   loadingContainer: {
     textAlign: 'center',
@@ -602,6 +641,12 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '200px',
+    position: 'relative',
+    zIndex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    padding: "2rem",
+    borderRadius: "24px",
+    backdropFilter: "blur(16px)",
   },
   loadingText: {
     fontSize: '1.25rem',
@@ -611,8 +656,8 @@ const styles = {
   spinner: {
     width: '40px',
     height: '40px',
-    border: '4px solid #f3f3f3',
-    borderTop: '4px solid #3498db',
+    border: '4px solid rgba(255, 69, 0, 0.1)',
+    borderTop: '4px solid #FF4500',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
@@ -621,9 +666,12 @@ const styles = {
     margin: '2rem auto',
     padding: '1rem',
     border: '1px solid #f5c2c7',
-    backgroundColor: '#f8d7da',
+    backgroundColor: 'rgba(248, 215, 218, 0.9)',
     color: '#842029',
     borderRadius: '8px',
+    position: 'relative',
+    zIndex: 1,
+    backdropFilter: "blur(16px)",
   },
   cardList: {
     display: 'flex',
@@ -637,12 +685,17 @@ const styles = {
   },
 };
 
-// Add the animation to the document
+// Add the animations to the document
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.4; }
+    100% { opacity: 0.3; }
   }
 `;
 document.head.appendChild(styleSheet);

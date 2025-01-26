@@ -11,7 +11,7 @@ class MatchingService {
     this.openai = new OpenAIApi(configuration);
     this.matchCache = new Map(); // Cache for storing matches
     this.similarityCache = new Map(); // Cache for storing similarity scores
-    this.cacheTimeout = 30 * 60 * 1000; // 30 minutes cache timeout
+    this.cacheTimeout = 60 * 1000; // 1 minute cache timeout
   }
 
   getCachedMatches(volunteerId) {
