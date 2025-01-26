@@ -2,30 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-/**
- * We fetch 2 things:
- *   1) /api/matching/:volunteerId => array of matched tasks for "individual requesters"
- *   2) /api/orgs => so we can always display private & gov org tasks, ignoring any match logic
- *
- * We'll show "privateOrgs" if the name doesn't contain "fire" or "foundation" (just example),
- * and "governmentOrgs" if name has "fire" or "lafd" or "fema".
- *
- * We'll apply the original card UI (with complete tasks, etc.).
- */
 function MatchingDashboard({ volunteerId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // We'll store 3 arrays:
-  // 1) "privateOrgs" => from /api/orgs (filter by org name if it doesn't contain "fire")
-  // 2) "governmentOrgs" => from /api/orgs (if name includes "fire", "lafd", "fema", etc.)
-  // 3) "requestorTasks" => from /api/matching => "individual requesters"
-
   const [privateOrgs, setPrivateOrgs] = useState([]);
   const [governmentOrgs, setGovernmentOrgs] = useState([]);
   const [requestorTasks, setRequestorTasks] = useState([]);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,9 +16,6 @@ function MatchingDashboard({ volunteerId }) {
         const matchRes = await fetch(`http://localhost:8080/api/matching/${volunteerId}`);
         if (!matchRes.ok) throw new Error("Failed to fetch matched tasks");
         const matchData = await matchRes.json();
-        // matchData is shape => {privateOrgs, requestorTasks, governmentOrgs} (if your route does that)
-        // BUT user says "They want to show private/gov always" => we won't rely on that
-        // We'll only rely on matchData for "requestors"
         const { requestorTasks: matchedRequestors = [] } = matchData;
         setRequestorTasks(matchedRequestors);
 
@@ -44,7 +23,6 @@ function MatchingDashboard({ volunteerId }) {
         const orgRes = await fetch("http://localhost:8080/api/orgs");
         if (!orgRes.ok) throw new Error("Failed to fetch orgs");
         const orgData = await orgRes.json();
-        // orgData => array of org objects {name, address, link, tasksRequested, ...}
         const priv = [];
         const gov = [];
         for (const org of orgData) {
@@ -57,7 +35,6 @@ function MatchingDashboard({ volunteerId }) {
         }
         setPrivateOrgs(priv);
         setGovernmentOrgs(gov);
-
       } catch (err) {
         setError(err.message);
         console.error("Error in fetchData for MatchingDashboard:", err);
@@ -85,26 +62,12 @@ function MatchingDashboard({ volunteerId }) {
     );
   }
 
-  const handleMessageClick = (e, item) => {
-  e.stopPropagation();
-  navigate("/messages", {
-    state: {
-      userId: volunteerId,
-      recipientId: item.requester?.id || item.userId,
-      recipientName: item.requester?.name || item.userName,
-      isNewChat: true,
-    },
-  });
-};
-
-
-
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.heading}>Your Matched Opportunities</h1>
         <div style={styles.columnsWrapper}>
-          {/* LEFT: Private Orgs (always displayed) */}
+          {/* LEFT: Private Orgs */}
           <div style={styles.column}>
             <div style={styles.subheading}>Private Organizations</div>
             {privateOrgs.length === 0 ? (
@@ -116,7 +79,7 @@ function MatchingDashboard({ volunteerId }) {
             )}
           </div>
 
-          {/* MIDDLE: Individual Requesters from /api/matching */}
+          {/* MIDDLE: Individual Requesters */}
           <div style={styles.column}>
             <div style={styles.subheading}>Individual Requesters</div>
             {requestorTasks.length === 0 ? (
@@ -128,7 +91,7 @@ function MatchingDashboard({ volunteerId }) {
             )}
           </div>
 
-          {/* RIGHT: Government Orgs (always displayed) */}
+          {/* RIGHT: Government Orgs */}
           <div style={styles.column}>
             <div style={styles.subheading}>Government Organizations</div>
             {governmentOrgs.length === 0 ? (
@@ -145,12 +108,9 @@ function MatchingDashboard({ volunteerId }) {
   );
 }
 
-/** 
- * OrgCard => for private or government org, always displayed.
- * shape of org => { _id, name, address, link, tasksRequested, ... }
- */
 function OrgCard({ org, cardType, volunteerId }) {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   let gradient = "linear-gradient(135deg, #f0f0f0, #ffffff)";
   let borderColor = "#ccc";
@@ -163,6 +123,25 @@ function OrgCard({ org, cardType, volunteerId }) {
   }
 
   const arrowSymbol = expanded ? "▼" : "▶";
+
+  const handleMessageClick = (e) => {
+    e.stopPropagation();
+    
+    console.log('Opening message with organization:', {
+      orgId: org._id,
+      orgName: org.name
+    });
+
+    navigate("/messages", {
+      state: {
+        userId: volunteerId,
+        recipientId: org._id,
+        recipientName: org.name,
+        isNewChat: true
+      },
+      replace: true
+    });
+  };
 
   return (
     <div
@@ -203,8 +182,35 @@ function OrgCard({ org, cardType, volunteerId }) {
               <div><strong>Category:</strong> {t.category || "N/A"}</div>
             </div>
           ))}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <button
+              onClick={handleMessageClick}
+              style={{
+                padding: '0.6rem 1rem',
+                borderRadius: '12px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: '#0095F6',
+                color: '#fff',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#0077E6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#0095F6';
+              }}
+            >
+              💬 Message Organization
+            </button>
+          </div>
           {org.link && (
-            <div style={{ marginTop: "0.6rem" }}>
+            <div style={{ marginTop: '1rem' }}>
               <a
                 href={org.link}
                 target="_blank"
@@ -222,23 +228,14 @@ function OrgCard({ org, cardType, volunteerId }) {
   );
 }
 
-/**
- * RequestorTaskCard => for the matched individual requesters from /api/matching
- * shape => { requestorName, address, taskTitle, urgency, specialtyRequired, finalScore }
- */
 function RequestorTaskCard({ item, cardType, volunteerId }) {
   const [expanded, setExpanded] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const navigate = useNavigate();
 
-  // The "old" card style
   let gradient = "linear-gradient(135deg, #E0F0FF, #D2E5FF)";
   let borderColor = "#B0D5FF";
-  if (cardType === "requester") {
-    gradient = "linear-gradient(135deg, #E0F0FF, #D2E5FF)";
-    borderColor = "#B0D5FF";
-  }
 
   const name = item.requestorName || "Unknown Person";
   const address = item.address || "No address provided";
@@ -252,16 +249,27 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
 
   const arrowSymbol = expanded ? "▼" : "▶";
 
-  // COMPLETION logic (like the old version)
   const handleMessageClick = (e) => {
     e.stopPropagation();
+    
+    // Extract recipient details from item
+    const recipientId = item.requester?.id || item.requestorId || item.userId;
+    const recipientName = item.requestorName || item.requester?.name || "Unknown User";
+    
+    console.log('Opening message with:', {
+      recipientId,
+      recipientName,
+      item
+    });
+
     navigate("/messages", {
       state: {
         userId: volunteerId,
-        // recipientId: ??? - we only have requestorId
-        // This is custom logic. If you want to pass item.requestorId, do so. 
-        isNewChat: true,
+        recipientId: recipientId,
+        recipientName: recipientName,
+        isNewChat: true
       },
+      replace: true
     });
   };
 
@@ -313,7 +321,6 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.1)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)"; }}
     >
-      {/* top row */}
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
           <div style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem", color: "#333" }}>
@@ -360,9 +367,16 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
                 gap: '0.4rem',
                 backgroundColor: '#0095F6',
                 color: '#fff',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#0077E6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#0095F6';
               }}
             >
-              💬 Message
+              💬 Message {item.requestorName || item.requester?.name || "User"}
             </button>
 
             <button
@@ -379,6 +393,13 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
                 gap: '0.4rem',
                 backgroundColor: '#4CAF50',
                 color: '#fff',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#3d8b40';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#4CAF50';
               }}
             >
               ✓ Complete Task

@@ -1,6 +1,6 @@
 import { Send, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import './DirectMessageInterface.css';
-import { useState, useEffect, useRef, useCallback } from 'react';
 
 function DirectMessageInterface({ userId, initialRecipient }) {
   const messagesEndRef = useRef(null);
@@ -9,86 +9,113 @@ function DirectMessageInterface({ userId, initialRecipient }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [userType, setUserType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const conversationsRef = useRef(conversations);
+
+  // Handle initial recipient and create new conversation
+  useEffect(() => {
+    console.log('DirectMessageInterface props:', {
+      userId,
+      initialRecipient
+    });
+  }, [userId, initialRecipient]);
 
   useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
-
-  useEffect(() => {
-    if (initialRecipient) {
-      setSelectedConversation({
+    if (initialRecipient?.id && initialRecipient?.name) {
+      console.log('Setting up new conversation with:', initialRecipient);
+      const newConv = {
         userId: initialRecipient.id,
         name: initialRecipient.name,
+        lastMessage: 'New conversation',
+        timestamp: new Date().toISOString()
+      };
+
+      setSelectedConversation(newConv);
+      setNewMessage("Hi! I saw your request and I'd like to help.");
+      
+      setConversations(prev => {
+        const exists = prev.some(conv => conv.userId === initialRecipient.id);
+        if (!exists) {
+          return [newConv, ...prev];
+        }
+        return prev;
       });
     }
   }, [initialRecipient]);
 
-  const fetchConversations = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/messages/conversations/${userId}`
-      );
-      const data = await response.json();
-
-      setConversations((prev) => {
-        const apiConvs = data.map((conv) => ({
-          userId: conv.partnerId,
-          name: conv.partnerName || 'Unknown', // Fallback name
-          lastMessage: conv.lastMessage,
-          timestamp: new Date(conv.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        }));
-
-        const localConvs = prev.filter(
-          (pConv) => !apiConvs.find((aConv) => aConv.userId === pConv.userId)
-        );
-
-        return [
-          ...localConvs,
-          ...apiConvs,
-        ]
-          .filter(
-            (v, i, a) => a.findIndex((t) => t.userId === v.userId) === i
-          )
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      });
-
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      setIsLoading(false);
+  // Fetch user type
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/${userId}`);
+        const userData = await response.json();
+        setUserType(userData.isVolunteer ? 'volunteer' : 'requester');
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    if (userId) {
+      fetchUserData();
     }
   }, [userId]);
 
+  // Fetch all conversations
   useEffect(() => {
-    fetchConversations();
-    const interval = setInterval(fetchConversations, 5000);
-    return () => clearInterval(interval);
-  }, [fetchConversations, userId]);
-
-  useEffect(() => {
-    if (!selectedConversation) return;
-
-    const fetchMessages = async () => {
+    const fetchConversations = async () => {
+      if (!userId) return;
+      
       try {
-        if (!userId || !selectedConversation.userId) {
-          console.error(
-            'Missing userId or selectedConversation.userId for fetching messages'
+        const response = await fetch(`http://localhost:8080/api/messages/conversations/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch conversations');
+        
+        const data = await response.json();
+        setConversations(prevConvs => {
+          // Merge existing conversations with new ones
+          const newConvs = data.filter(newConv => 
+            !prevConvs.some(prevConv => prevConv.userId === newConv.userId)
           );
-          return;
-        }
+          
+          // Preserve selected conversation
+          const updatedConvs = [...prevConvs];
+          data.forEach(newConv => {
+            const existingIndex = updatedConvs.findIndex(conv => conv.userId === newConv.userId);
+            if (existingIndex >= 0) {
+              updatedConvs[existingIndex] = {
+                ...updatedConvs[existingIndex],
+                lastMessage: newConv.lastMessage,
+                timestamp: newConv.timestamp
+              };
+            }
+          });
+          
+          return [...newConvs, ...updatedConvs].sort((a, b) => 
+            new Date(b.timestamp) - new Date(a.timestamp)
+          );
+        });
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    const intervalId = setInterval(fetchConversations, 3000);
+    fetchConversations();
+
+    return () => clearInterval(intervalId);
+  }, [userId]);
+
+  // Fetch messages for selected conversation
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedConversation?.userId || !userId) return;
+
+      try {
         const response = await fetch(
-          `http://localhost:8080/api/messages/${selectedConversation.userId}/${userId}`
+          `http://localhost:8080/api/messages/${userId}/${selectedConversation.userId}`
         );
-        if (!response.ok) {
-          throw new Error('Failed to fetch messages');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch messages');
+        
         const data = await response.json();
         setMessages(data);
         scrollToBottom();
@@ -97,9 +124,10 @@ function DirectMessageInterface({ userId, initialRecipient }) {
       }
     };
 
+    const intervalId = setInterval(fetchMessages, 3000);
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
-    return () => clearInterval(interval);
+
+    return () => clearInterval(intervalId);
   }, [selectedConversation, userId]);
 
   const scrollToBottom = () => {
@@ -107,27 +135,7 @@ function DirectMessageInterface({ userId, initialRecipient }) {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) {
-      console.error('Cannot send message: Message or recipient is missing');
-      return;
-    }
-
-    const tempConv = {
-      userId: selectedConversation.userId,
-      name: selectedConversation.name,
-      lastMessage: newMessage,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    };
-
-    setConversations((prev) => {
-      const existing = prev.find((c) => c.userId === tempConv.userId);
-      return existing
-        ? prev.map((c) => (c.userId === tempConv.userId ? tempConv : c))
-        : [tempConv, ...prev];
-    });
+    if (!newMessage.trim() || !selectedConversation?.userId) return;
 
     try {
       const response = await fetch('http://localhost:8080/api/messages', {
@@ -140,13 +148,30 @@ function DirectMessageInterface({ userId, initialRecipient }) {
         }),
       });
 
-      if (!response.ok) {
-        setConversations(conversationsRef.current); // Revert optimistic update
-        throw new Error('Failed to send message');
-      }
+      if (!response.ok) throw new Error('Failed to send message');
 
       const message = await response.json();
-      setMessages((prev) => [...prev, message]);
+      
+      // Update messages
+      setMessages(prev => [...prev, message]);
+      
+      // Update conversation list
+      setConversations(prev => {
+        const updated = prev.map(conv => {
+          if (conv.userId === selectedConversation.userId) {
+            return {
+              ...conv,
+              lastMessage: newMessage,
+              timestamp: new Date().toISOString()
+            };
+          }
+          return conv;
+        });
+        
+        // Sort by latest message
+        return updated.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      });
+      
       setNewMessage('');
       scrollToBottom();
     } catch (error) {
@@ -154,19 +179,20 @@ function DirectMessageInterface({ userId, initialRecipient }) {
     }
   };
 
-  const filteredConversations = conversations.filter((conv) =>
-    conv.name && conv.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter conversations based on search term
+  const filteredConversations = conversations.filter(conv =>
+    conv.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="dmi-container">
-      {/* Sidebar */}
+      {/* Left sidebar - Conversations */}
       <div className="dmi-sidebar">
         <div className="dmi-search-box">
           <div className="dmi-search-relative">
             <input
               type="text"
-              placeholder="Search requesters"
+              placeholder={`Search ${userType === 'volunteer' ? 'requesters' : 'volunteers'}`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="dmi-search-input"
@@ -188,38 +214,33 @@ function DirectMessageInterface({ userId, initialRecipient }) {
                 onClick={() => setSelectedConversation(conv)}
               >
                 <div className="dmi-conversation-avatar">
-                  {conv.name ? conv.name.charAt(0) : ''}
+                  {conv.name?.charAt(0) || '?'}
                 </div>
                 <div className="dmi-conversation-info">
-                  <div className="dmi-conversation-name">{conv.name}</div>
+                  <div className="dmi-conversation-name">{conv.name || 'Unknown'}</div>
                   <div className="dmi-conversation-last-message">
-                    {conv.lastMessage || 'New conversation'}
+                    {conv.lastMessage || 'Start a conversation'}
                   </div>
                 </div>
-                <div className="dmi-conversation-time">{conv.timestamp}</div>
               </div>
             ))
           ) : (
-            <div className="dmi-no-conversations">No requesters found</div>
+            <div className="dmi-no-conversations">No conversations found</div>
           )}
         </div>
       </div>
 
-      {/* Messages Container */}
+      {/* Right side - Messages */}
       <div className="dmi-messages-container">
         {selectedConversation ? (
           <>
             <div className="dmi-chat-header">
               <div className="dmi-chat-header-avatar">
-                {selectedConversation?.name
-                  ? selectedConversation.name.charAt(0)
-                  : ''}
+                {selectedConversation.name?.charAt(0) || '?'}
               </div>
-              <div className="dmi-chat-header-info">
-                <h2 className="dmi-chat-header-title">
-                  {selectedConversation.name}
-                </h2>
-              </div>
+              <h2 className="dmi-chat-header-title">
+                {selectedConversation.name || 'Unknown'}
+              </h2>
             </div>
 
             <div className="dmi-messages-area">
@@ -233,9 +254,7 @@ function DirectMessageInterface({ userId, initialRecipient }) {
                   >
                     <div
                       className={`dmi-message-bubble ${
-                        message.senderId === userId
-                          ? 'sender-bubble'
-                          : 'receiver-bubble'
+                        message.senderId === userId ? 'sender-bubble' : 'receiver-bubble'
                       }`}
                     >
                       {message.content}
@@ -258,9 +277,7 @@ function DirectMessageInterface({ userId, initialRecipient }) {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === 'Enter' && handleSendMessage()
-                  }
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="Type a message..."
                   className="dmi-message-input"
                 />
@@ -276,7 +293,7 @@ function DirectMessageInterface({ userId, initialRecipient }) {
           </>
         ) : (
           <div className="dmi-no-conversation-selected">
-            Select a conversation to start chatting!
+            Select a conversation to start chatting
           </div>
         )}
       </div>
