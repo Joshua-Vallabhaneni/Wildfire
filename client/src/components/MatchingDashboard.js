@@ -15,17 +15,10 @@ function MatchingDashboard({ volunteerId }) {
         if (!matchRes.ok) throw new Error("Failed to fetch matches");
         
         const { privateOrgs, requestorTasks, governmentOrgs } = await matchRes.json();
-
-        console.log("Received matches:", {
-          privateOrgs: privateOrgs.length,
-          requestorTasks: requestorTasks.length,
-          governmentOrgs: governmentOrgs.length,
-        });
         
         setPrivateOrgs(privateOrgs);
         setRequestorTasks(requestorTasks);
         setGovernmentOrgs(governmentOrgs);
-        
       } catch (err) {
         setError(err.message);
         console.error("Error in fetchData:", err);
@@ -39,8 +32,8 @@ function MatchingDashboard({ volunteerId }) {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", marginTop: "3rem" }}>
-        <div style={{ fontSize: "1.25rem", color: "#666" }}>Loading matches...</div>
+      <div style={styles.loadingContainer}>
+        <div style={styles.loadingText}>Loading matches...</div>
       </div>
     );
   }
@@ -57,58 +50,52 @@ function MatchingDashboard({ volunteerId }) {
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.heading}>Your Matched Opportunities</h1>
-        <div style={styles.columnsWrapper}>
-          {/* LEFT: Private Orgs */}
-          <div style={styles.column}>
-            <div style={styles.subheading}>Private Organizations</div>
-            {privateOrgs.length === 0 ? (
-              <p style={styles.emptyText}>No matching private organizations found.</p>
-            ) : (
-              privateOrgs.map((org, idx) => (
-                <OrgCard
-                  key={idx}
-                  org={org}
-                  cardType="private"
-                  volunteerId={volunteerId}
-                />
-              ))
-            )}
-          </div>
-
-          {/* MIDDLE: Individual Requesters */}
-          <div style={styles.column}>
-            <div style={styles.subheading}>Individual Requesters</div>
-            {requestorTasks.length === 0 ? (
-              <p style={styles.emptyText}>No matching individual requesters found.</p>
-            ) : (
-              requestorTasks.map((task, idx) => (
-                <RequestorTaskCard
-                  key={idx}
-                  item={task}
-                  cardType="requester"
-                  volunteerId={volunteerId}
-                />
-              ))
-            )}
-          </div>
-
-          {/* RIGHT: Government Orgs */}
-          <div style={styles.column}>
-            <div style={styles.subheading}>Government Organizations</div>
-            {governmentOrgs.length === 0 ? (
-              <p style={styles.emptyText}>No matching government organizations found.</p>
-            ) : (
-              governmentOrgs.map((org, idx) => (
-                <OrgCard
-                  key={idx}
-                  org={org}
-                  cardType="government"
-                  volunteerId={volunteerId}
-                />
-              ))
-            )}
-          </div>
+        <div style={styles.horizontalLayout}>
+          <Column
+            title="Private Organizations"
+            items={privateOrgs}
+            type="private"
+            CardComponent={OrgCard}
+            volunteerId={volunteerId}
+          />
+          <Column
+            title="Individual Requesters"
+            items={requestorTasks}
+            type="requester"
+            CardComponent={RequestorTaskCard}
+            volunteerId={volunteerId}
+          />
+          <Column
+            title="Government Organizations"
+            items={governmentOrgs}
+            type="government"
+            CardComponent={OrgCard}
+            volunteerId={volunteerId}
+          />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Column({ title, items, type, CardComponent, volunteerId }) {
+  return (
+    <div style={styles.column}>
+      <h2 style={styles.columnTitle}>{title}</h2>
+      <div style={styles.cardList}>
+        {items.length === 0 ? (
+          <p style={styles.emptyText}>No matching {title.toLowerCase()} found.</p>
+        ) : (
+          items.map((item, idx) => (
+            <CardComponent
+              key={idx}
+              org={item}
+              item={item}
+              cardType={type}
+              volunteerId={volunteerId}
+            />
+          ))
+        )}
       </div>
     </div>
   );
@@ -118,28 +105,10 @@ function OrgCard({ org, cardType, volunteerId }) {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
 
-  let gradient = "linear-gradient(135deg, #f0f0f0, #ffffff)";
-  let borderColor = "#ccc";
-  let scoreColor = "#333";
-
-  if (cardType === "private") {
-    gradient = "linear-gradient(135deg, #FFE5D4, #FFD1B8)";
-    borderColor = "#FFC2A1";
-    scoreColor = "#D84315"; // Dark Orange
-  } else if (cardType === "government") {
-    gradient = "linear-gradient(135deg, #E7F9EC, #D9F2E2)";
-    borderColor = "#ADE7C7";
-    scoreColor = "#2E7D32"; // Dark Green
-  }
+  const cardStyles = getCardStyles(cardType);
 
   const handleMessageClick = (e) => {
     e.stopPropagation();
-    
-    console.log('Opening message with organization:', {
-      orgId: org._id,
-      orgName: org.name
-    });
-
     navigate("/messages", {
       state: {
         userId: volunteerId,
@@ -154,69 +123,33 @@ function OrgCard({ org, cardType, volunteerId }) {
   return (
     <div
       style={{
-        background: gradient,
-        border: `1px solid ${borderColor}`,
-        borderRadius: "16px",
-        padding: "1rem 1.2rem",
-        marginBottom: "1rem",
-        cursor: "pointer",
-        transition: "box-shadow 0.2s ease",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
+        ...styles.baseCard,
+        ...cardStyles.card,
       }}
       onClick={() => setExpanded(!expanded)}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.1)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)"; }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={styles.cardHeader}>
         <div>
-          <div style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem", color: "#333" }}>
-            {org.name || "Unknown Organization"}
-          </div>
-          <div style={{ fontSize: "0.85rem", color: "#777", marginBottom: "0.5rem" }}>
-            {org.address || "No address provided"}
-          </div>
-          <div style={{ fontSize: "0.9rem", color: scoreColor, fontWeight: 500 }}>
-            Match Score: {(org.finalScore * 100).toFixed(1)}%
-          </div>
+          <div style={styles.cardTitle}>{org.name || "Unknown Organization"}</div>
+          <div style={styles.cardAddress}>{org.address || "No address provided"}</div>
+          <div style={styles.matchScore}>Match Score: {(org.finalScore * 100).toFixed(1)}%</div>
         </div>
-        <div style={{ marginLeft: "0.5rem", fontWeight: "bold", fontSize: "1.25rem", color: "#444" }}>
-          {expanded ? "▼" : "▶"}
-        </div>
+        <div style={styles.arrowIcon}>{expanded ? "▼" : "▶"}</div>
       </div>
 
       {expanded && (
-        <div style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#333", lineHeight: "1.4" }}>
-          {(org.tasksRequested || []).map((t, idx) => (
-            <div key={idx} style={{ marginBottom: "1rem" }}>
-              <div><strong>Task Title:</strong> {t.title}</div>
-              <div><strong>Urgency:</strong> {t.urgency}/10</div>
-              <div><strong>Specialty Required:</strong> {t.specialtyRequired ? "Yes" : "No"}</div>
-              <div><strong>Category:</strong> {t.category || "N/A"}</div>
+        <div style={styles.expandedContent}>
+          {(org.tasksRequested || []).map((task, idx) => (
+            <div key={idx} style={styles.taskInfo}>
+              <div><strong>Task Title:</strong> {task.title}</div>
+              <div><strong>Urgency:</strong> {task.urgency}/10</div>
+              <div><strong>Specialty Required:</strong> {task.specialtyRequired ? "Yes" : "No"}</div>
             </div>
           ))}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+          <div style={styles.actionButtons}>
             <button
               onClick={handleMessageClick}
-              style={{
-                padding: '0.6rem 1rem',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backgroundColor: '#0095F6',
-                color: '#fff',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#0077E6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#0095F6';
-              }}
+              style={styles.messageButton}
             >
               💬 Message Organization
             </button>
@@ -226,26 +159,7 @@ function OrgCard({ org, cardType, volunteerId }) {
                   e.stopPropagation();
                   window.open(org.link, "_blank");
                 }}
-                style={{
-                  padding: '0.6rem 1rem',
-                  borderRadius: '12px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  backgroundColor: '#28a745',
-                  color: '#fff',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#218838';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#28a745';
-                }}
+                style={styles.websiteButton}
               >
                 🌐 Visit Website
               </button>
@@ -260,53 +174,83 @@ function OrgCard({ org, cardType, volunteerId }) {
 function RequestorTaskCard({ item, cardType, volunteerId }) {
   const [expanded, setExpanded] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState('');
   const navigate = useNavigate();
 
-  let gradient = "linear-gradient(135deg, #E0F0FF, #D2E5FF)";
-  let borderColor = "#B0D5FF";
-
-  const name = item.requestorName || "Unknown Person";
-  const address = item.address || "No address provided";
-  const urgency = item.urgency || 0;
-  const finalScore = item.finalScore || 0;
-
-  let urgencyColor = "#333";
-  if (urgency >= 8) urgencyColor = "#E53935";
-  else if (urgency >= 5) urgencyColor = "#FB8C00";
-  else urgencyColor = "#43A047";
+  const cardStyles = getCardStyles(cardType);
 
   const handleMessageClick = (e) => {
     e.stopPropagation();
-    
-    const recipientId = item.requestorId;
-    const recipientName = item.requestorName || "Unknown User";
-
-    console.log('Opening message with:', {
-      recipientId,
-      recipientName,
-      item
-    });
-
     navigate("/messages", {
       state: {
         userId: volunteerId,
-        recipientId: recipientId,
-        recipientName: recipientName,
+        recipientId: item.requestorId,
+        recipientName: item.requestorName || "Unknown User",
         isNewChat: true
       },
       replace: true
     });
   };
 
-  const handleCompleteClick = (e) => {
-    e.stopPropagation();
-    setShowUploadDialog(true);
-  };
+  return (
+    <div
+      style={{
+        ...styles.baseCard,
+        ...cardStyles.card,
+      }}
+      onClick={() => setExpanded(!expanded)}
+    >
+      <div style={styles.cardHeader}>
+        <div>
+          <div style={styles.cardTitle}>{item.requestorName || "Unknown Person"}</div>
+          <div style={styles.cardAddress}>{item.address || "No address provided"}</div>
+          <div style={styles.matchScore}>Match Score: {(item.finalScore * 100).toFixed(1)}%</div>
+        </div>
+        <div style={styles.arrowIcon}>{expanded ? "▼" : "▶"}</div>
+      </div>
+
+      {expanded && (
+        <div style={styles.expandedContent}>
+          <div style={styles.taskInfo}>
+            <div><strong>Task Title:</strong> {item.taskTitle}</div>
+            <div><strong>Urgency:</strong> {item.urgency}/10</div>
+            <div><strong>Specialty Required:</strong> {item.specialtyRequired ? "Yes" : "No"}</div>
+          </div>
+          <div style={styles.actionButtons}>
+            <button
+              onClick={handleMessageClick}
+              style={styles.messageButton}
+            >
+              💬 Message Requester
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowUploadDialog(true);
+              }}
+              style={styles.completeButton}
+            >
+              ✓ Complete Task
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showUploadDialog && (
+        <UploadDialog
+          onClose={() => setShowUploadDialog(false)}
+          item={item}
+          volunteerId={volunteerId}
+        />
+      )}
+    </div>
+  );
+}
+
+function UploadDialog({ onClose, item, volunteerId }) {
+  const navigate = useNavigate();
 
   const handleFileUpload = async (file) => {
     try {
-      setUploadStatus('uploading');
       await fetch('http://localhost:8080/api/completed-tasks', {
         method: 'POST',
         headers: {
@@ -319,257 +263,258 @@ function RequestorTaskCard({ item, cardType, volunteerId }) {
           verificationDoc: file.name
         }),
       });
-
-      setShowUploadDialog(false);
-      setUploadStatus('success');
-      setTimeout(() => setUploadStatus(''), 3000);
-
+      onClose();
       navigate("/sustainability");
     } catch (error) {
       console.error('Error saving completed task:', error);
-      setUploadStatus('error');
     }
   };
 
   return (
-    <div
-      style={{
-        background: gradient,
-        border: `1px solid ${borderColor}`,
-        borderRadius: "16px",
-        padding: "1rem 1.2rem",
-        marginBottom: "1rem",
-        cursor: "pointer",
-        transition: "box-shadow 0.2s ease",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
-      }}
-      onClick={() => setExpanded(!expanded)}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.1)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.08)"; }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem", color: "#333" }}>
-            {name}
-          </div>
-          <div style={{ fontSize: "0.85rem", color: "#777", marginBottom: "0.5rem" }}>
-            {address}
-          </div>
-          <div style={{ fontSize: "0.9rem", color: "#2979FF", fontWeight: 500 }}>
-            Match Score: {(finalScore * 100).toFixed(1)}%
-          </div>
-        </div>
-        <div style={{ marginLeft: "0.5rem", fontWeight: "bold", fontSize: "1.25rem", color: "#444" }}>
-          {expanded ? "▼" : "▶"}
-        </div>
+    <>
+      <div style={styles.modalOverlay} onClick={onClose} />
+      <div style={styles.modalContent}>
+        <h2 style={styles.modalTitle}>Upload Verification Document</h2>
+        <p style={styles.modalText}>
+          Please upload a document to verify task completion. Accepted formats: PDF, JPG, JPEG, PNG
+        </p>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={(e) => {
+            if (e.target.files[0]) {
+              handleFileUpload(e.target.files[0]);
+            }
+          }}
+          style={styles.fileInput}
+        />
+        <button onClick={onClose} style={styles.cancelButton}>
+          Cancel
+        </button>
       </div>
-
-      {expanded && (
-        <div style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#333", lineHeight: "1.4" }}>
-          <div style={{ marginBottom: "0.4rem" }}><strong>Task Title:</strong> {item.taskTitle}</div>
-          <div style={{ marginBottom: "0.4rem" }}>
-            <strong>Urgency:</strong>{" "}
-            <span style={{ color: urgencyColor }}>{urgency}/10</span>
-          </div>
-          <div style={{ marginBottom: "0.4rem" }}>
-            <strong>Specialty Required:</strong>{" "}
-            {item.specialtyRequired ? "Yes" : "No"}
-          </div>
-
-{/* Action Buttons */}
-<div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-            <button
-              onClick={handleMessageClick}
-              style={{
-                padding: '0.6rem 1rem',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backgroundColor: '#0095F6',
-                color: '#fff',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#0077E6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#0095F6';
-              }}
-            >
-              💬 Message Requester
-            </button>
-
-            <button
-              onClick={handleCompleteClick}
-              style={{
-                padding: '0.6rem 1rem',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backgroundColor: '#4CAF50',
-                color: '#fff',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#3d8b40';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#4CAF50';
-              }}
-            >
-              ✓ Complete Task
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Dialog */}
-      {showUploadDialog && (
-        <>
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 999
-            }}
-            onClick={() => setShowUploadDialog(false)}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: 'white',
-              padding: '32px',
-              borderRadius: '24px',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.2)',
-              width: '90%',
-              maxWidth: '500px',
-              zIndex: 1000
-            }}
-          >
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1rem' }}>
-              Upload Verification Document
-            </h2>
-            <p style={{ color: '#666', marginBottom: '1rem' }}>
-              Please upload a document to verify task completion. Accepted formats: PDF, JPG, JPEG, PNG
-            </p>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => {
-                if (e.target.files[0]) {
-                  handleFileUpload(e.target.files[0]);
-                }
-              }}
-              style={{ marginBottom: '1rem' }}
-            />
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button
-                onClick={() => setShowUploadDialog(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  backgroundColor: '#666',
-                  color: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {uploadStatus && (
-        <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          backgroundColor: 'white',
-          padding: '16px 24px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          zIndex: 1001
-        }}>
-          {uploadStatus === 'uploading' ? 'Uploading document...' : 'Task marked as complete!'}
-        </div>
-      )}
-    </div>
+    </>
   );
+}
+
+function getCardStyles(type) {
+  switch (type) {
+    case 'private':
+      return {
+        card: {
+          backgroundColor: '#FFF5F0',
+          borderColor: '#FFE0D0',
+        }
+      };
+    case 'requester':
+      return {
+        card: {
+          backgroundColor: '#F0F7FF',
+          borderColor: '#D0E6FF',
+        }
+      };
+    case 'government':
+      return {
+        card: {
+          backgroundColor: '#F0FFF4',
+          borderColor: '#D0FFE0',
+        }
+      };
+    default:
+      return {
+        card: {
+          backgroundColor: '#FFFFFF',
+          borderColor: '#E0E0E0',
+        }
+      };
+  }
 }
 
 const styles = {
   container: {
-    width: "100%",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "2rem",
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '2rem',
   },
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "24px",
-    padding: "2rem",
-    width: "100%",
-    boxShadow: "0 16px 40px rgba(0,0,0,0.1)",
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: '24px',
+    padding: '2rem',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
   },
   heading: {
-    fontSize: "2rem",
-    fontWeight: 800,
-    marginBottom: "2rem",
-    textAlign: "center",
-    color: "#333",
+    fontSize: '2rem',
+    fontWeight: '700',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: '2rem',
   },
-  columnsWrapper: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "1rem",
-    flexWrap: "wrap",
+  horizontalLayout: {
+    display: 'flex',
+    gap: '2rem',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   column: {
-    flex: "1",
-    minWidth: "280px",
-    maxWidth: "360px",
+    flex: '1',
+    minWidth: '300px',
+    maxWidth: '400px',
   },
-  subheading: {
-    fontSize: "1.25rem",
-    fontWeight: 600,
-    marginBottom: "1rem",
-    color: "#444",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "0.5rem",
+  columnTitle: {
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    color: '#444',
+    marginBottom: '1rem',
   },
-  emptyText: {
-    fontSize: "0.9rem",
-    color: "#777",
+  baseCard: {
+    borderRadius: '12px',
+    padding: '1rem',
+    marginBottom: '1rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    border: '1px solid',
+  },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardTitle: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: '0.25rem',
+  },
+  cardAddress: {
+    fontSize: '0.875rem',
+    color: '#666',
+    marginBottom: '0.25rem',
+  },
+  matchScore: {
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    color: '#444',
+  },
+  arrowIcon: {
+    fontSize: '1rem',
+    color: '#666',
+    marginLeft: '0.5rem',
+  },
+  expandedContent: {
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+  },
+  taskInfo: {
+    fontSize: '0.875rem',
+    marginBottom: '1rem',
+  },
+  actionButtons: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginTop: '1rem',
+  },
+  messageButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#0095F6',
+    color: 'white',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  },
+  websiteButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#28a745',
+    color: 'white',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  },
+  completeButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 999,
+  },
+  modalContent: {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: 'white',
+    padding: '2rem',
+    borderRadius: '16px',
+    width: '90%',
+    maxWidth: '500px',
+    zIndex: 1000,
+  },
+  modalTitle: {
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    marginBottom: '1rem',
+  },
+  modalText: {
+    color: '#666',
+    marginBottom: '1rem',
+  },
+  fileInput: {
+    marginBottom: '1rem',
+  },
+      cancelButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#666',
+    color: 'white',
+    cursor: 'pointer',
+  },
+  loadingContainer: {
+    textAlign: 'center',
+    marginTop: '3rem',
+  },
+  loadingText: {
+    fontSize: '1.25rem',
+    color: '#666',
   },
   errorBox: {
-    maxWidth: "600px",
-    margin: "2rem auto",
-    padding: "1rem",
-    border: "1px solid #f5c2c7",
-    backgroundColor: "#f8d7da",
-    color: "#842029",
-    borderRadius: "8px",
+    maxWidth: '600px',
+    margin: '2rem auto',
+    padding: '1rem',
+    border: '1px solid #f5c2c7',
+    backgroundColor: '#f8d7da',
+    color: '#842029',
+    borderRadius: '8px',
+  },
+  cardList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  emptyText: {
+    fontSize: '0.875rem',
+    color: '#666',
+    fontStyle: 'italic',
   },
 };
 
