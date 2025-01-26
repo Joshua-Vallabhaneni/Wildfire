@@ -69,8 +69,13 @@ function VolunteerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ ...styles.container, justifyContent: "center" }}>
-        <div style={{ fontSize: "1.25rem", color: "#666" }}>Loading...</div>
+      <div style={{ 
+        ...styles.container, 
+        justifyContent: "center",
+        alignItems: "center", // Add this line for vertical centering
+        background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)" // Updated background
+      }}>
+        <div style={styles.spinner}></div> {/* Spinner in the center */}
       </div>
     );
   }
@@ -199,6 +204,25 @@ const styles = {
     alignItems: "flex-start",
     padding: "2rem",
   },
+  spinner: { // Spinner styles
+    width: '60px',
+    height: '60px',
+    border: '6px solid rgba(255, 165, 0, 0.3)',
+    borderTop: '6px solid #FF4500',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  }
 };
+
+// Add the spin animation to the document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
+
 
 export default VolunteerDashboard;

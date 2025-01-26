@@ -28,8 +28,8 @@ function MatchingDashboard({ volunteerId }) {
       const cachedTimestamp = localStorage.getItem(`matches_timestamp_${volunteerId}`);
       
       if (!refreshing && cachedData && cachedTimestamp) {
-        const age = Date.now() - parseInt(cachedTimestamp);
-        if (age < 30 * 60 * 1000) {
+        const age = Date.now() - parseInt(cachedTimestamp, 10);
+        if (age < 30 * 60 * 1000) { // 30 minutes
           const data = JSON.parse(cachedData);
           setAllMatches(data);
           updateDisplayedMatches(data, 1);
@@ -439,17 +439,21 @@ const styles = {
     justifyContent: "center",
     padding: "4rem 2rem",
     fontFamily: '"Inter", -apple-system, sans-serif',
-    background: "linear-gradient(150deg, #E86A33 0%, #F4A460 45%, #F7BE6D 100%)",
+    background: "linear-gradient(135deg, #FF4500, #FFA500, #FFFFFF)", // Updated to match LandingPage
     color: "#1a1a1a",
     position: "relative",
     overflow: "hidden",
   },
-  backgroundLayer2: {
+  backgroundLayer1: { // Added to match LandingPage
     position: "absolute",
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: "radial-gradient(circle at 50% -20%, #FF4500, transparent)",
+    opacity: 0.3,
+    animation: "pulse 2s infinite",
+  },
+  backgroundLayer2: { // Updated to match LandingPage
+    position: "absolute",
+    top: 0, left: 0, right: 0, bottom: 0,
     background: "radial-gradient(circle at 30% 100%, #FFA500, transparent)",
     opacity: 0.2,
   },
