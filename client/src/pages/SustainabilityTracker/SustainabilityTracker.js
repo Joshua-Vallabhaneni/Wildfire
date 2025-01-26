@@ -62,7 +62,7 @@ const styles = {
     padding: "2rem",
     marginBottom: "1.5rem",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-    transition: "transform 0.2s ease",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
     cursor: "pointer",
     border: "1px solid rgba(255, 165, 0, 0.1)",
   },
@@ -103,6 +103,7 @@ const styles = {
   },
 };
 
+// ProgressMeter Component
 const ProgressMeter = ({ count, maxWidth = 100 }) => (
   <div style={styles.progressBar}>
     <div 
@@ -164,7 +165,11 @@ const SustainabilityTracker = () => {
     );
   }
 
+  // Calculate total completed tasks if needed
   const totalCompleted = Object.values(completedTasks).reduce((sum, count) => sum + count, 0);
+
+  // Define hardcoded counts for category cards
+  const hardcodedCounts = [5, 8, 7, 11];
 
   return (
     <div style={styles.container}>
@@ -181,15 +186,17 @@ const SustainabilityTracker = () => {
         }}>
           <div style={styles.metricHeader}>
             <h2 style={{...styles.metricTitle, color: "#FF4500"}}>Total Impact</h2>
-            <div style={styles.metricCount}>16</div>
+            <div style={styles.metricCount}>31</div>
           </div>
           <p style={styles.description}>Total tasks completed across all categories</p>
           <ProgressMeter count={totalCompleted} />
         </div>
 
         {/* Category Cards */}
-        {Object.entries(categories).map(([category, description]) => {
-          const count = completedTasks[category] || 0;
+        {Object.entries(categories).map(([category, description], index) => {
+          // Assign hardcoded counts based on index
+          const count = hardcodedCounts[index] || 0;
+
           return (
             <div 
               key={category} 
@@ -205,10 +212,10 @@ const SustainabilityTracker = () => {
             >
               <div style={styles.metricHeader}>
                 <h2 style={styles.metricTitle}>{category}</h2>
-                <div style={styles.metricCount}>{4}</div>
+                <div style={styles.metricCount}>{count}</div>
               </div>
               <p style={styles.description}>{description}</p>
-              <ProgressMeter count={4} />
+              <ProgressMeter count={count} />
             </div>
           );
         })}
