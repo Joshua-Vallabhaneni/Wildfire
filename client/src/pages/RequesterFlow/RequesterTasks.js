@@ -200,8 +200,9 @@ function RequesterTasks() {
     }
   };
 
+  // Replace it with this updated function:
   const handleSubmit = () => {
-    navigate(`/requester/${userId}/dashboard`);
+    navigate(`/messages`, { state: { userId } });
   };
 
   const getUrgencyBadgeStyle = (urgency) => {
